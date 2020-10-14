@@ -9,7 +9,7 @@ return [
     'FOOD_LIST' => "food-list/",
     'HELIA'     => "helia-service/",
     'INBOX'     => "inbox-service/",
-    'SMS'            => "sms-service/",
+    'SMS'       => "sms-service/",
 
     'CONTACT_BROKER' => "contact-broker/",
 
