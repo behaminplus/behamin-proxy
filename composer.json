@@ -1,0 +1,39 @@
+{
+    "name": "behamin/service-proxy",
+    "description": "for proxy service and use with name and other utilities",
+    "type": "library",
+    "require": {
+        "laravel/framework": "^8.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alireza Bahram",
+            "email": "alib327@gmail.com"
+        },
+        {
+            "name": "Omid Alizadeh",
+            "email": "om.alizadeh1@gmail.com"
+        },
+        {
+            "name": "Hebrahimzadeh",
+            "email": "abi.hossein@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "BSProxy\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BSProxy\\BSProxyServiceProvider"
+            ],
+            "aliases": {
+                "BSProxy": "BSProxy\\Facade"
+            }
+        }
+    }
+}
