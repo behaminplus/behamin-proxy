@@ -2,7 +2,6 @@
 
 namespace BSProxy;
 
-use BSProxy\Enums\Service;
 use BSProxy\Exceptions\ServiceProxyException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -14,16 +13,42 @@ use Illuminate\Support\Facades\Http;
  */
 class Proxy
 {
-    private $method = 'get';
+    /**
+     * @var Request $request
+     */
     private $request = null;
-    private $path, $headers, $data;
-    private $serviceProxy;
+    private $method = 'get';
+    private $headers = ["Accept" => "application/json"];
+    private $path = null;
+    private $data = null;
+    private $token = null;
+    private $modelId = null;
+    private $serviceUrl = null;
 
     public function __construct()
     {
         $this->path = '/';
-        $this->headers = ["Accept" => "application/json"];
     }
+
+    /**
+     * @return null
+     */
+    public function getModelId()
+    {
+        return $this->modelId;
+    }
+
+    /**
+     * @param  null  $modelId
+     *
+     * @return Proxy
+     */
+    public function setModelId($modelId)
+    {
+        $this->modelId = $modelId;
+        return $this;
+    }
+
 
     /**
      * @param $service
@@ -32,16 +57,28 @@ class Proxy
      * @return string
      * @throws ServiceProxyException
      */
-    public function getServiceUrl($service, $app = 'GLOBAL_APP_URL'): string
+    public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): string
     {
-        $host = parse_url(config('proxy-service-url.' . $app), PHP_URL_HOST);
-        $path = config('proxy-service-url.' . $service);
-        if ($path === null){
-            throw new ServiceProxyException($service. ' service path not found.');
+        $parsedUrl = parse_url(config('proxy-service-url.'.$app));
+        $path = config('proxy-service-url.'.$service, null);
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $host = $parsedUrl['host'];
+
+        if ($path === null) {
+            throw new ServiceProxyException(
+                $service.' service not found url address.'
+            );
         }
 
-        return  'https://' . rtrim($host, '/') . '/' . ltrim($path, '/');
+        $this->serviceUrl = $scheme.rtrim($host, '/').'/'.ltrim($path, '/');
+        return $this;
     }
+
+    public function getServiceUrl()
+    {
+        return $this->serviceUrl;
+    }
+
 
     /**
      * @return string
@@ -53,8 +90,10 @@ class Proxy
 
     /**
      * @param  string  $method
+     *
+     * @return Proxy
      */
-    public function setMethod(string $method): Proxy
+    public function setMethod(string $method)
     {
         $this->method = $method;
         return $this;
@@ -70,11 +109,26 @@ class Proxy
 
     /**
      * @param  null  $request
+     *
+     * @return Proxy
      */
-    public function setRequest($request): Proxy
+    public function setRequest($request)
     {
         $this->request = $request;
+        $this->fetchFromRequest($request);
         return $this;
+    }
+
+    /**
+     * @param $request
+     */
+    protected function fetchFromRequest($request)
+    {
+        if ($request !== null) {
+            $this->method = $request->method();
+            $this->path = $request->path();
+            $this->data = $request->all();
+        }
     }
 
     /**
@@ -87,8 +141,10 @@ class Proxy
 
     /**
      * @param  string  $path
+     *
+     * @return Proxy
      */
-    public function setPath(string $path): Proxy
+    public function setPath(string $path)
     {
         $this->path = $path;
         return $this;
@@ -104,10 +160,36 @@ class Proxy
 
     /**
      * @param  string[]  $headers
+     *
+     * @return Proxy
      */
-    public function setHeaders(array $headers): Proxy
+    public function setHeaders(array $headers)
     {
         $this->headers = $headers;
+        return $this;
+    }
+
+    /**
+     * @param $header
+     *
+     * @return $this
+     */
+    public function addHeader($header)
+    {
+        $this->headers[] = $header;
+        return $this;
+    }
+
+    /**
+     * @param $headers
+     *
+     * @return $this
+     */
+    public function addHeaders($headers)
+    {
+        foreach ($headers as $header) {
+            $this->addHeader($header);
+        }
         return $this;
     }
 
@@ -121,8 +203,10 @@ class Proxy
 
     /**
      * @param  mixed  $data
+     *
+     * @return Proxy
      */
-    public function setData($data): Proxy
+    public function setData($data)
     {
         $this->data = $data;
         return $this;
@@ -139,7 +223,6 @@ class Proxy
      *
      * @return mixed
      * @throws ServiceProxyException
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     public function makeRequest(
         $request,
@@ -150,17 +233,36 @@ class Proxy
         $data = [],
         $headers = []
     ) {
-        [$token, $method, $path, $data, $headers, $serviceUrl]
-            = $this->getRequestFields(
-            $request,
-            $service,
-            $method,
-            $path,
-            $modelId,
-            $data,
-            $headers
-        );
-        $response = Http::withToken($token)->withHeaders($headers);
+        if ($request !== null) {
+            $this->setRequest($request);
+        }
+
+        $this->setServiceUrl($service);
+
+        if (!empty($headers)) {
+            $this->addHeaders($headers);
+        }
+
+        $this->setToken();
+
+        if ($path !== null) {
+            $this->setPath($path);
+        }
+
+        if ($modelId !== null) {
+            $this->setModelId($modelId);
+        }
+
+        if ($method !== null) {
+            $this->setMethod($method);
+        }
+
+        $response = Http::withHeaders($headers);
+
+        if ($this->hasToken()) {
+            $response = $response->withToken($this->getToken());
+        }
+
         if ($request && $request->hasFile('media')) {
             $response = $response->attach(
                 'media',
@@ -169,50 +271,47 @@ class Proxy
             );
         }
 
-        $response = $response->$method(
-            $serviceUrl.$path,
+        $response = $response->{$this->method}(
+            $this->getServiceUrl().$this->getPath().'/'.$this->getModelId(),
             $data
         );
         $jsonResponse = $response->json();
+
         $this->handleRequestErrors($response, $jsonResponse);
+
         return $jsonResponse;
     }
 
     /**
-     * @param  Request  $request
-     * @param $service
-     * @param $method
-     * @param $path
-     * @param $modelId
-     * @param $data
-     * @param $headers
-     *
-     * @return array
+     * @return bool
      */
-    protected function getRequestFields(
-        $request,
-        $service,
-        $method,
-        $path,
-        $modelId,
-        $data,
-        $headers
-    ): array {
-        $token = $headers['token'] ?? null;
-        if ($request !== null) {
-            $method = $method ?? $request->method();
-            $path = $path ?? $request->path();
-            $token = $request->bearerToken();
-            $data = $data ?? $request->all();
+    protected function hasToken(): bool
+    {
+        return ($this->getToken() !== null);
+    }
+
+    /**
+     * @param  null  $token
+     *
+     * @return mixed|string|null
+     */
+    public function setToken($token = null)
+    {
+        if ($token !== null) {
+            $this->token = $token;
+        } else {
+            $token = $this->headers['token'] ?? null;
+            if ($this->request !== null) {
+                $token = $this->request->bearerToken();
+            }
+            $this->token = $token;
         }
+        return $this;
+    }
 
-        $headers = array_merge($this->headers, $headers);
-
-        $serviceUrl = $this->getServiceUrl($service);
-        //if it's not' found ?
-        $path = $path ?? $this->path;
-        $path = ($modelId === null) ? $path : ($path.'/'.$modelId);
-        return array($token, $method, $path, $data, $headers, $serviceUrl);
+    public function getToken()
+    {
+        return $this->token;
     }
 
     /**
@@ -247,10 +346,15 @@ class Proxy
 
     private function responseHaseError($jsonResponse): bool
     {
-        return is_array($jsonResponse) && array_key_exists('error', $jsonResponse);
+        return is_array($jsonResponse)
+            && array_key_exists(
+                'error',
+                $jsonResponse
+            );
     }
 
-    private function getResponseMessage($jsonResponse){
+    private function getResponseMessage($jsonResponse)
+    {
         if (array_key_exists('message', $jsonResponse['error'])) {
             $errorMessage = $jsonResponse['error']['message'];
         } else {
@@ -264,8 +368,9 @@ class Proxy
      *
      * @return mixed
      */
-    private function getResponseError($jsonResponse){
-        if (array_key_exists('errors', $jsonResponse['error'])){
+    private function getResponseError($jsonResponse)
+    {
+        if (array_key_exists('errors', $jsonResponse['error'])) {
             return $jsonResponse['error']['errors'];
         }
         return null;
