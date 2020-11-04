@@ -10,14 +10,21 @@ class BSProxyServiceProvider extends ServiceProvider
     {
         parent::register();
 
-        $this->mergeConfigFrom( __DIR__ . '/config/proxy-services-url.php' , 'proxy-services-url');
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/proxy-services-url.php',
+            'proxy-services-url'
+        );
     }
 
-    public function boot(): void
+    public function boot()
     {
         if ($this->app->runningInConsole()) {
             $this->publishes(
-                 [ __DIR__ .  '/config/proxy-services-url.php' => config_path('proxy-services-url.php')] ,
+                [
+                    __DIR__.'/../config/proxy-services-url.php' => config_path(
+                        'proxy-services-url.php'
+                    )
+                ],
                 'config'
             );
         }
