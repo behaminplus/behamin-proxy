@@ -23,4 +23,4 @@ return [
 ## Usage
 ```
 BSProxy::makeRequest($request, 'SERVICE_NAME', $method, $path)
-``
+```
