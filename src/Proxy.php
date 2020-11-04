@@ -54,15 +54,23 @@ class Proxy
      * @param $service
      * @param  string  $app
      *
-     * @return string
-     * @throws ServiceProxyException
+     * @return self
+     * @throws ServiceProxyException`
      */
-    public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): string
+    public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-service-url.'.$app));
-        $path = config('proxy-service-url.'.$service, null);
+        $parsedUrl = parse_url(config('proxy-services-url.'.$app));
+
         $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
+
+        $port = '';
+        if (! empty($parsedUrl['port'])) {
+            $port = ':' . $parsedUrl['port'];
+        }
+
+        $path = $parsedUrl['path']?? '';
+        $path .= config('proxy-services-url.'.$service, null);
 
         if ($path === null) {
             throw new ServiceProxyException(
@@ -70,13 +78,23 @@ class Proxy
             );
         }
 
-        $this->serviceUrl = $scheme.rtrim($host, '/').'/'.ltrim($path, '/');
+        $this->serviceUrl = $scheme.$host.$port. '/'. trim($path, '/') . '/';
         return $this;
     }
 
     public function getServiceUrl()
     {
         return $this->serviceUrl;
+    }
+
+    public function getServiceRequestUrl(){
+        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
+
+        if ($path = trim($this->getPath(), '/')) {
+            $path = $path . '/';
+        }
+
+        return $serviceUrl.$path.$this->getModelId();
     }
 
 
@@ -271,10 +289,7 @@ class Proxy
             );
         }
 
-        $response = $response->{$this->method}(
-            $this->getServiceUrl().$this->getPath().'/'.$this->getModelId(),
-            $data
-        );
+        $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
         $jsonResponse = $response->json();
 
         $this->handleRequestErrors($response, $jsonResponse);
@@ -309,6 +324,9 @@ class Proxy
         return $this;
     }
 
+    /**
+     * @return null
+     */
     public function getToken()
     {
         return $this->token;
@@ -338,12 +356,20 @@ class Proxy
         }
     }
 
+    /**
+     * @param $response
+     * @return bool
+     */
     private function isBadRequest($response): bool
     {
         //TODO check Conflict with laravel error code 500
         return $response->status() >= 400 && $response->status() < 500;
     }
 
+    /**
+     * @param $jsonResponse
+     * @return bool
+     */
     private function responseHaseError($jsonResponse): bool
     {
         return is_array($jsonResponse)
@@ -353,6 +379,10 @@ class Proxy
             );
     }
 
+    /**
+     * @param $jsonResponse
+     * @return mixed
+     */
     private function getResponseMessage($jsonResponse)
     {
         if (array_key_exists('message', $jsonResponse['error'])) {

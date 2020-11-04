@@ -32,7 +32,7 @@
                 "BSProxy\\BSProxyServiceProvider"
             ],
             "aliases": {
-                "BSProxy": "BSProxy\\Facade"
+                "BSProxy": "BSProxy"
             }
         }
     }
