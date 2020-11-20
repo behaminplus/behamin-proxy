@@ -10,6 +10,9 @@ namespace BSProxy;
  * @method static Proxy setRequest($request)
  * @method static Proxy setMethod(string $method)
  * @method static Proxy setModelId($modelId)
+ * @method static mixed|BSProxyResponse dispatch($serviceName)
+ * @method static Proxy addFile($name, $file)
+ * @method static string getServiceRequestUrl()
  */
 class BSProxy extends \Illuminate\Support\Facades\Facade
 {
