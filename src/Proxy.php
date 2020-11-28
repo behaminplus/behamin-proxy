@@ -5,6 +5,7 @@ namespace BSProxy;
 use BSProxy\Exceptions\ServiceProxyException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Route;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -119,7 +120,8 @@ class Proxy
         $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
 
         if ($path = trim($this->getPath(), '/')) {
-            $path = $path . '/';
+            if (! Str::contains($path, '?'))
+                $path = $path . '/';
         }
 
         if ($modelId = trim($modelId = $this->getModelId(), '/')) {
