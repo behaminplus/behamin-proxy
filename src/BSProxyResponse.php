@@ -33,10 +33,10 @@ class BSProxyResponse
         $this->proxy = $proxy;
     }
 
-    public function getItem($objectName = null)
+    public function getItem($objectName = '*')
     {
         if (isset($this->bodyJson->data)) {
-            if ($objectName !== null) {
+            if ($objectName !== '*') {
                 if (property_exists($this->bodyJson->data, $objectName)) {
                     return $this->bodyJson->data->{$objectName};
                 } else {
@@ -59,6 +59,18 @@ class BSProxyResponse
     {
         return $this->response->getStatusCode();
     }
+
+    public function successWhen($code, $exceptionStack = '')
+    {
+        if ($this->getStatusCode() != $code) {
+            if ($exceptionStack) {
+                $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
+                throwHttpResponseException($exceptionStack);
+            }
+        }
+        return $this;
+    }
+
 
     public function hasError($key = null)
     {
