@@ -60,11 +60,14 @@ class BSProxyResponse
         return $this->response->getStatusCode();
     }
 
-    public function successWhen($code, $exceptionStack = '')
+    public function successWhen($code, $exceptionStack = '', $info = false)
     {
         if ($this->getStatusCode() != $code) {
             if ($exceptionStack) {
                 $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
+                if ($info){
+                    dd($this->getInfo());
+                }
                 throwHttpResponseException($exceptionStack);
             }
         }
