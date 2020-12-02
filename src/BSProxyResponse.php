@@ -19,6 +19,9 @@ class BSProxyResponse
      */
     protected $proxy;
     protected $retException = false;
+    protected $successStatusCode;
+    protected $addInfoToException = false;
+    protected $addResponseToException = false;
 
     public function setRetException()
     {
@@ -60,17 +63,37 @@ class BSProxyResponse
         return $this->response->getStatusCode();
     }
 
-    public function successWhen($code, $exceptionStack = '', $info = false)
-    {
-        if ($this->getStatusCode() != $code) {
-            if ($exceptionStack) {
-                $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
-                if ($info){
-                    dd($this->getInfo());
-                }
-                throwHttpResponseException($exceptionStack);
+    public function withException($exceptionStack){
+        if ($this->getStatusCode() != $this->successStatusCode) {
+            $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
+            if ($this->addInfoToException){
+                $exceptionStack['info'] = $this->getInfo();
             }
+            if ($this->addResponseToException){
+                if ($this->hasError()){
+                    $exceptionStack['error_response'] = $this->getArrayErrors();
+                } else{
+                    $exceptionStack['response'] = json_decode($this->getBody());
+                }
+            }
+            throwHttpResponseException($exceptionStack);
         }
+        return $this;
+    }
+
+    public function withResponse(){
+        $this->addResponseToException = true;
+        return $this;
+    }
+
+    public function withInfo(){
+        $this->addInfoToException = true;
+        return $this;
+    }
+
+    public function successWhen($code)
+    {
+        $this->successStatusCode = $code;
         return $this;
     }
 
