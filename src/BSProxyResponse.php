@@ -63,7 +63,7 @@ class BSProxyResponse
         return $this->response->getStatusCode();
     }
 
-    public function withException($exceptionStack){
+    public function withException($exceptionStack = ['request' => 'failed.']){
         if ($this->getStatusCode() != $this->successStatusCode) {
             $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
             if ($this->addInfoToException){
@@ -81,7 +81,7 @@ class BSProxyResponse
         return $this;
     }
 
-    public function withResponse(){
+    public function withResponseInException(){
         $this->addResponseToException = true;
         return $this;
     }
