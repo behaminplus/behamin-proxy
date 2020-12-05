@@ -4,6 +4,7 @@ namespace BSProxy;
 
 
 use BSProxy\Exceptions\ServiceProxyException;
+use Illuminate\Http\Client\Response;
 use function Livewire\str;
 
 class BSProxyResponse
@@ -31,7 +32,11 @@ class BSProxyResponse
     public function __construct($response, $proxy)
     {
         $this->response = $response;
-        $this->body = $response->getContent();
+        if ($response instanceof Response) {
+            $this->body = (string)$response->getBody();
+        } else {
+            $this->body = $response->getContent();
+        }
         $this->bodyJson = json_decode($this->body);
         $this->proxy = $proxy;
     }
