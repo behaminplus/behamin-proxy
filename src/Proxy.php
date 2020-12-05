@@ -32,6 +32,7 @@ class Proxy
     private $dispatch = false;
     private $service = null;
     private $files = null;
+    private $withProxyResponse  = false;
 
     /**
      * @return null
@@ -42,13 +43,17 @@ class Proxy
     }
 
     /**
-     * @param null $service
+     * @param string|array $service
      * @param string $app
      * @return Proxy
      * @throws ServiceProxyException
      */
     public function setService($service, $app = 'GLOBAL_APP_URL')
     {
+        if (is_array($service)){
+            $service = reset($service);
+            $app = next($service);
+        }
         $this->service = $service;
         return $this->setServiceUrl($service, $app);
     }
@@ -330,22 +335,36 @@ class Proxy
             );
         }
 
+        $thisProxy = clone $this;
+
         if ($this->dispatch) {
-            $thisProxy = clone $this;
-
             $response = $this->dispatchRequest();
-            $this->resetData();
-
-            return new BSProxyResponse($response, $thisProxy);
+            return $this->getProxyResponse($response, $thisProxy);
         } else {
             $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
             $jsonResponse = $response->json();
+        }
+        if ($this->withProxyResponse){
+            return $this->getProxyResponse($response, $thisProxy);
         }
 
         $this->handleRequestErrors($response, $jsonResponse);
 
         $this->resetData();
         return $jsonResponse;
+    }
+
+    private function getProxyResponse($response, $thisProxy){
+        $this->resetData();
+        return new BSProxyResponse($response, $thisProxy);
+    }
+
+    /**
+     * @return $this
+     */
+    public function withProxyResponse(){
+        $this->withProxyResponse = true;
+        return $this;
     }
 
     protected function resetData()
