@@ -92,7 +92,7 @@ class Proxy
     public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
     {
         $parsedUrl = parse_url(config('proxy-services-url.'.$app));
-        if (empty($parsedUrl['host'])){
+        if (empty($parsedUrl['host']) && empty($parsedUrl['path'])){
             throw new ServiceProxyException('app host not found in config.');
         }
 
