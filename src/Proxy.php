@@ -97,7 +97,7 @@ class Proxy
         }
 
         $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
-        $host = $parsedUrl['host'];
+        $host = $parsedUrl['host'] ?? $parsedUrl['path'];
 
         $port = '';
         if (! empty($parsedUrl['port'])) {
