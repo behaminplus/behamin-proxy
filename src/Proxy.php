@@ -116,7 +116,7 @@ class Proxy
             );
         }
 
-        $this->serviceUrl = ($this->dispatch ? ($scheme . $host . $port) : '') . '/' . trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
         return $this;
     }
 
