@@ -51,8 +51,7 @@ class Proxy
     public function setService($service, $app = 'GLOBAL_APP_URL')
     {
         if (is_array($service)){
-            $service = reset($service);
-            $app = next($service);
+            [$service, $app] = array_values($service);
         }
         $this->service = $service;
         return $this->setServiceUrl($service, $app);
@@ -93,6 +92,9 @@ class Proxy
     public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
     {
         $parsedUrl = parse_url(config('proxy-services-url.'.$app));
+        if (empty($parsedUrl['host'])){
+            throw new ServiceProxyException('app host not found in config.');
+        }
 
         $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
@@ -104,6 +106,9 @@ class Proxy
 
         $path = $parsedUrl['path']?? '';
         $path .= config('proxy-services-url.'.$service, null);
+        if (empty($parsedUrl)){
+            throw new ServiceProxyException('service ' . $service .' not found in config.');
+        }
 
         if ($path === null) {
             throw new ServiceProxyException(
