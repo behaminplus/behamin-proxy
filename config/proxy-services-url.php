@@ -13,5 +13,5 @@ return [
     'SMS'           => 'sms-service/',
     'CONTACT_BROKER' => 'contact-broker/',
 
-    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', env('HTTP_HOST'))
+    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', url(env('HTTP_HOST')))
 ];
