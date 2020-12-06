@@ -22,6 +22,9 @@ class Proxy
      * @var Request $request
      */
     private $request = null;
+    /**
+     * @var
+     */
     private $method;
     private $headers = ["Accept" => "application/json"];
     private $path = null;
@@ -32,10 +35,15 @@ class Proxy
     private $dispatch = false;
     private $service = null;
     private $files = null;
-    private $withProxyResponse  = false;
+    private $withProxyResponse = false;
+
+    public function __construct()
+    {
+        $this->path = '/';
+    }
 
     /**
-     * @return null
+     *
      */
     public function getService()
     {
@@ -50,20 +58,15 @@ class Proxy
      */
     public function setService($service, $app = 'GLOBAL_APP_URL')
     {
-        if (is_array($service)){
+        if (is_array($service)) {
             [$service, $app] = array_values($service);
         }
         $this->service = $service;
         return $this->setServiceUrl($service, $app);
     }
 
-    public function __construct()
-    {
-        $this->path = '/';
-    }
-
     /**
-     * @return null
+     *
      */
     public function getModelId()
     {
@@ -71,7 +74,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $modelId
+     * @param  $modelId
      *
      * @return Proxy
      */
@@ -84,35 +87,35 @@ class Proxy
 
     /**
      * @param $service
-     * @param  string  $app
+     * @param string $app
      *
      * @return self
      * @throws ServiceProxyException`
      */
     public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-services-url.'.$app));
-        if (empty($parsedUrl['host']) && empty($parsedUrl['path'])){
-            throw new ServiceProxyException('app host not found in config.');
+        $parsedUrl = parse_url(config('proxy-services-url.' . $app));
+        if (empty($parsedUrl['host']) && empty($parsedUrl['path'])) {
+            throw new ServiceProxyException('app host not found in the config file.');
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'] ?? $parsedUrl['path'];
 
         $port = '';
-        if (! empty($parsedUrl['port'])) {
+        if ( ! empty($parsedUrl['port'])) {
             $port = ':' . $parsedUrl['port'];
         }
 
-        $path = $parsedUrl['path']?? '';
-        $path .= config('proxy-services-url.'.$service, null);
-        if (empty($parsedUrl)){
-            throw new ServiceProxyException('service ' . $service .' not found in config.');
+        $path = $parsedUrl['path'] ?? '';
+        $path .= config('proxy-services-url.' . $service, null);
+        if (empty($parsedUrl)) {
+            throw new ServiceProxyException($service . ' service not found in the config file.');
         }
 
         if ($path === null) {
             throw new ServiceProxyException(
-                $service.' service not found url address.'
+                $service . ' service url address not found.'
             );
         }
 
@@ -120,18 +123,25 @@ class Proxy
         return $this;
     }
 
+    /**
+     *
+     */
     public function getServiceUrl()
     {
         return $this->serviceUrl;
     }
 
+    /**
+     * @return string
+     */
     public function getServiceRequestUrl()
     {
         $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
 
         if ($path = trim($this->getPath(), '/')) {
-            if (! Str::contains($path, '?'))
+            if ( ! Str::contains($path, '?')) {
                 $path = $path . '/';
+            }
         }
 
         if ($modelId = trim($modelId = $this->getModelId(), '/')) {
@@ -151,7 +161,7 @@ class Proxy
     }
 
     /**
-     * @param  string  $method
+     * @param string $method
      *
      * @return Proxy
      */
@@ -170,7 +180,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $request
+     * @param null $request
      *
      * @return Proxy
      */
@@ -202,7 +212,7 @@ class Proxy
     }
 
     /**
-     * @param  string  $path
+     * @param string $path
      *
      * @return Proxy
      */
@@ -221,7 +231,7 @@ class Proxy
     }
 
     /**
-     * @param  string[]  $headers
+     * @param string[] $headers
      *
      * @return Proxy
      */
@@ -264,7 +274,7 @@ class Proxy
     }
 
     /**
-     * @param  mixed  $data
+     * @param mixed $data
      *
      * @return Proxy
      */
@@ -295,14 +305,13 @@ class Proxy
         $data = [],
         $headers = []
     ) {
-
         if ($request !== null) {
             $this->setRequest($request);
         }
 
         $this->setService($service);
 
-        if (!empty($headers)) {
+        if ( ! empty($headers)) {
             $this->addHeaders($headers);
         }
 
@@ -322,7 +331,7 @@ class Proxy
             }
         }
 
-        if (!empty($data)) {
+        if ( ! empty($data)) {
             $this->setData($data);
         }
 
@@ -349,7 +358,7 @@ class Proxy
             $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
             $jsonResponse = $response->json();
         }
-        if ($this->withProxyResponse){
+        if ($this->withProxyResponse) {
             return $this->getProxyResponse($response, $thisProxy);
         }
 
@@ -359,7 +368,13 @@ class Proxy
         return $jsonResponse;
     }
 
-    private function getProxyResponse($response, $thisProxy){
+    /**
+     * @param $response
+     * @param $thisProxy
+     * @return BSProxyResponse
+     */
+    private function getProxyResponse($response, $thisProxy)
+    {
         $this->resetData();
         return new BSProxyResponse($response, $thisProxy);
     }
@@ -367,11 +382,15 @@ class Proxy
     /**
      * @return $this
      */
-    public function withProxyResponse(){
+    public function withProxyResponse()
+    {
         $this->withProxyResponse = true;
         return $this;
     }
 
+    /**
+     *
+     */
     protected function resetData()
     {
         $this->request = null;
@@ -395,21 +414,19 @@ class Proxy
     }
 
     /**
-     * @param  null  $token
+     * @param null $token
      *
      * @return mixed|string|null
      */
     public function setToken($token = null)
     {
-        if ($token !== null) {
-            $this->token = $token;
-        } else {
+        if ($token === null) {
             $token = $this->headers['token'] ?? null;
             if ($this->request !== null) {
                 $token = $this->request->bearerToken();
             }
-            $this->token = $token;
         }
+        $this->token = $token;
         return $this;
     }
 
@@ -504,9 +521,14 @@ class Proxy
         return $this;
     }
 
+    /**
+     * @param $name
+     * @param $file
+     * @return $this
+     */
     public function addFile($name, $file)
     {
-        if (!\is_array($file) && !$file instanceof UploadedFile) {
+        if ( ! \is_array($file) && ! $file instanceof UploadedFile) {
             throw new \InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
         }
 
@@ -517,7 +539,9 @@ class Proxy
 
         $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
         if (count($fileData) <> 4) {
-            throw new \InvalidArgumentException('An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.');
+            throw new \InvalidArgumentException(
+                'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
+            );
         }
         $this->files[$name] = $fileData;
         return $this;
