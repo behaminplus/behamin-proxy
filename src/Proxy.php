@@ -92,12 +92,12 @@ class Proxy
     public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
     {
         $parsedUrl = parse_url(config('proxy-services-url.'.$app));
-        if (empty($parsedUrl['host']) && empty($parsedUrl['path'])){
+        if (empty($parsedUrl['host'])){
             throw new ServiceProxyException('app host not found in config.');
         }
 
         $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
-        $host = $parsedUrl['host'] ?? $parsedUrl['path'];
+        $host = $parsedUrl['host'];
 
         $port = '';
         if (! empty($parsedUrl['port'])) {
@@ -106,11 +106,7 @@ class Proxy
 
         $path = $parsedUrl['path']?? '';
         $path .= config('proxy-services-url.'.$service, null);
-        if (empty($parsedUrl)){
-            throw new ServiceProxyException('service ' . $service .' not found in config.');
-        }
-
-        if ($path === null) {
+        if (empty($path)) {
             throw new ServiceProxyException(
                 $service.' service not found url address.'
             );
@@ -236,9 +232,9 @@ class Proxy
      *
      * @return $this
      */
-    public function addHeader($header)
+    public function addHeader(array $header)
     {
-        $this->headers[] = $header;
+        $this->headers = array_merge($this->headers, $header);
         return $this;
     }
 
@@ -326,6 +322,7 @@ class Proxy
             $this->setData($data);
         }
 
+        $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
 
         if ($this->hasToken()) {
@@ -349,12 +346,12 @@ class Proxy
             $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
             $jsonResponse = $response->json();
         }
+
         if ($this->withProxyResponse){
             return $this->getProxyResponse($response, $thisProxy);
         }
 
-        $this->handleRequestErrors($response, $jsonResponse);
-
+        $this->handleRequestErrors($response, $response->json());
         $this->resetData();
         return $jsonResponse;
     }
@@ -374,6 +371,7 @@ class Proxy
 
     protected function resetData()
     {
+        $this->withProxyResponse = false;
         $this->request = null;
         $this->method = null;
         $this->headers = ["Accept" => "application/json"];
