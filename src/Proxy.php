@@ -136,12 +136,12 @@ class Proxy
 
         if ($path = trim($this->getPath(), '/')) {
             if ( ! Str::contains($path, '?')) {
-                $path = $path . '/';
+                $path .= '/';
             }
         }
 
         if ($modelId = trim($modelId = $this->getModelId(), '/')) {
-            $modelId = $modelId . '/';
+            $modelId .= '/';
         }
 
         return $serviceUrl . $modelId . $path;
@@ -168,7 +168,7 @@ class Proxy
     }
 
     /**
-     * @return null
+     * @return Request
      */
     public function getRequest()
     {
@@ -565,7 +565,7 @@ class Proxy
         if ($this->files) {
             $request->files = new FileBag($this->files);
         }
-        return $request = app()->handle($request);
+        return app()->handle($request);
     }
 
 }
