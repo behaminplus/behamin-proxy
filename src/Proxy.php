@@ -3,13 +3,17 @@
 namespace BSProxy;
 
 use BSProxy\Exceptions\ServiceProxyException;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Route;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
+
+use function is_array;
 
 /**
  * Class Proxy
@@ -87,19 +91,18 @@ class Proxy
 
     /**
      * @param $service
-     * @param string $app
-     *
+     * @param string $basicUrl
      * @return self
-     * @throws ServiceProxyException`
+     * @throws ServiceProxyException
      */
-    public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
+    public function setServiceUrl($service, $basicUrl = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-services-url.'.$app));
-        if (empty($parsedUrl['host'])){
-            throw new ServiceProxyException('app host not found in config.');
+        $parsedUrl = parse_url(config('proxy-services-url.' . $basicUrl));
+        if (empty($parsedUrl['host'])) {
+            throw new ServiceProxyException('host address not found in the config file.');
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'];
 
         $port = '';
@@ -107,8 +110,8 @@ class Proxy
             $port = ':' . $parsedUrl['port'];
         }
 
-        $path = $parsedUrl['path']?? '';
-        $path .= config('proxy-services-url.'.$service, null);
+        $path = $parsedUrl['path'] ?? '';
+        $path .= config('proxy-services-url.' . $service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
                 $service . ' service url address not found.'
@@ -290,7 +293,7 @@ class Proxy
      * @param array $headers
      *
      * @return mixed|BSProxyResponse
-     * @throws ServiceProxyException|\Illuminate\Contracts\Filesystem\FileNotFoundException
+     * @throws ServiceProxyException|FileNotFoundException
      */
     public function makeRequest(
         $request,
@@ -356,7 +359,7 @@ class Proxy
             $jsonResponse = $response->json();
         }
 
-        if ($this->withProxyResponse){
+        if ($this->withProxyResponse) {
             return $this->getProxyResponse($response, $thisProxy);
         }
 
@@ -526,8 +529,8 @@ class Proxy
      */
     public function addFile($name, $file)
     {
-        if ( ! \is_array($file) && ! $file instanceof UploadedFile) {
-            throw new \InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
+        if ( ! is_array($file) && ! $file instanceof UploadedFile) {
+            throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
         }
 
         if ($file instanceof UploadedFile) {
@@ -537,7 +540,7 @@ class Proxy
 
         $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
         if (count($fileData) <> 4) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
             );
         }
