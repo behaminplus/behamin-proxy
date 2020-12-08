@@ -8,12 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Route;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
-
-use function is_array;
 
 /**
  * Class Proxy
@@ -106,7 +103,7 @@ class Proxy
         $host = $parsedUrl['host'];
 
         $port = '';
-        if ( ! empty($parsedUrl['port'])) {
+        if (!empty($parsedUrl['port'])) {
             $port = ':' . $parsedUrl['port'];
         }
 
@@ -138,7 +135,7 @@ class Proxy
         $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
 
         if ($path = trim($this->getPath(), '/')) {
-            if ( ! Str::contains($path, '?')) {
+            if (!Str::contains($path, '?')) {
                 $path .= '/';
             }
         }
@@ -147,7 +144,7 @@ class Proxy
             $modelId .= '/';
         }
 
-        return $serviceUrl . $modelId . $path;
+        return trim($serviceUrl . $modelId . $path, '/');
     }
 
 
@@ -310,7 +307,7 @@ class Proxy
 
         $this->setService($service);
 
-        if ( ! empty($headers)) {
+        if (!empty($headers)) {
             $this->addHeaders($headers);
         }
 
@@ -330,7 +327,7 @@ class Proxy
             }
         }
 
-        if ( ! empty($data)) {
+        if (!empty($data)) {
             $this->setData($data);
         }
 
@@ -449,7 +446,7 @@ class Proxy
     {
         if ($this->isBadRequest($response)) {
             $errorMessage = $errors = null;
-            if ($this->responseHaseError($jsonResponse)) {
+            if ($this->responseHasError($jsonResponse)) {
                 $errorMessage = $this->getResponseMessage($jsonResponse);
                 $errors = $this->getResponseError($jsonResponse);
             }
@@ -477,13 +474,10 @@ class Proxy
      * @param $jsonResponse
      * @return bool
      */
-    private function responseHaseError($jsonResponse): bool
+    private function responseHasError($jsonResponse): bool
     {
         return is_array($jsonResponse)
-            && array_key_exists(
-                'error',
-                $jsonResponse
-            );
+            && array_key_exists('error', $jsonResponse);
     }
 
     /**
@@ -529,7 +523,7 @@ class Proxy
      */
     public function addFile($name, $file)
     {
-        if ( ! is_array($file) && ! $file instanceof UploadedFile) {
+        if (!is_array($file) && !$file instanceof UploadedFile) {
             throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
         }
 
@@ -570,5 +564,4 @@ class Proxy
         }
         return app()->handle($request);
     }
-
 }
