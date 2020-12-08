@@ -3,8 +3,17 @@
 namespace BSProxy;
 
 use BSProxy\Exceptions\ServiceProxyException;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
+use Route;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\FileBag;
+
+use function is_array;
 
 /**
  * Class Proxy
@@ -17,13 +26,20 @@ class Proxy
      * @var Request $request
      */
     private $request = null;
-    private $method = 'get';
+    /**
+     * @var
+     */
+    private $method;
     private $headers = ["Accept" => "application/json"];
     private $path = null;
-    private $data = null;
+    private $data = [];
     private $token = null;
     private $modelId = null;
     private $serviceUrl = null;
+    private $dispatch = false;
+    private $service = null;
+    private $files = null;
+    private $withProxyResponse = false;
 
     public function __construct()
     {
@@ -31,7 +47,30 @@ class Proxy
     }
 
     /**
-     * @return null
+     *
+     */
+    public function getService()
+    {
+        return $this->service;
+    }
+
+    /**
+     * @param string|array $service
+     * @param string $app
+     * @return Proxy
+     * @throws ServiceProxyException
+     */
+    public function setService($service, $app = 'GLOBAL_APP_URL')
+    {
+        if (is_array($service)) {
+            [$service, $app] = array_values($service);
+        }
+        $this->service = $service;
+        return $this->setServiceUrl($service, $app);
+    }
+
+    /**
+     *
      */
     public function getModelId()
     {
@@ -39,7 +78,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $modelId
+     * @param  $modelId
      *
      * @return Proxy
      */
@@ -52,62 +91,76 @@ class Proxy
 
     /**
      * @param $service
-     * @param  string  $app
-     *
+     * @param string $basicUrl
      * @return self
-     * @throws ServiceProxyException`
+     * @throws ServiceProxyException
      */
-    public function setServiceUrl($service, $app = 'GLOBAL_APP_URL'): self
+    public function setServiceUrl($service, $basicUrl = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-services-url.'.$app));
+        $parsedUrl = parse_url(config('proxy-services-url.' . $basicUrl));
+        if (empty($parsedUrl['host'])) {
+            throw new ServiceProxyException('host address not found in the config file.');
+        }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'];
 
         $port = '';
-        if (! empty($parsedUrl['port'])) {
+        if ( ! empty($parsedUrl['port'])) {
             $port = ':' . $parsedUrl['port'];
         }
 
-        $path = $parsedUrl['path']?? '';
-        $path .= config('proxy-services-url.'.$service, null);
-
-        if ($path === null) {
+        $path = $parsedUrl['path'] ?? '';
+        $path .= config('proxy-services-url.' . $service, null);
+        if (empty($path)) {
             throw new ServiceProxyException(
-                $service.' service not found url address.'
+                $service . ' service url address not found.'
             );
         }
 
-        $this->serviceUrl = $scheme.$host.$port. '/'. trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
         return $this;
     }
 
+    /**
+     *
+     */
     public function getServiceUrl()
     {
         return $this->serviceUrl;
     }
 
-    public function getServiceRequestUrl(){
+    /**
+     * @return string
+     */
+    public function getServiceRequestUrl()
+    {
         $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
 
         if ($path = trim($this->getPath(), '/')) {
-            $path = $path . '/';
+            if ( ! Str::contains($path, '?')) {
+                $path .= '/';
+            }
         }
 
-        return $serviceUrl.$path.$this->getModelId();
+        if ($modelId = trim($modelId = $this->getModelId(), '/')) {
+            $modelId .= '/';
+        }
+
+        return $serviceUrl . $modelId . $path;
     }
 
 
     /**
      * @return string
      */
-    public function getMethod(): string
+    public function getMethod(): ?string
     {
         return $this->method;
     }
 
     /**
-     * @param  string  $method
+     * @param string $method
      *
      * @return Proxy
      */
@@ -118,7 +171,7 @@ class Proxy
     }
 
     /**
-     * @return null
+     * @return Request
      */
     public function getRequest()
     {
@@ -126,7 +179,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $request
+     * @param null $request
      *
      * @return Proxy
      */
@@ -152,13 +205,13 @@ class Proxy
     /**
      * @return string
      */
-    public function getPath(): string
+    public function getPath(): ?string
     {
         return $this->path;
     }
 
     /**
-     * @param  string  $path
+     * @param string $path
      *
      * @return Proxy
      */
@@ -177,7 +230,7 @@ class Proxy
     }
 
     /**
-     * @param  string[]  $headers
+     * @param string[] $headers
      *
      * @return Proxy
      */
@@ -192,9 +245,9 @@ class Proxy
      *
      * @return $this
      */
-    public function addHeader($header)
+    public function addHeader(array $header)
     {
-        $this->headers[] = $header;
+        $this->headers = array_merge($this->headers, $header);
         return $this;
     }
 
@@ -220,7 +273,7 @@ class Proxy
     }
 
     /**
-     * @param  mixed  $data
+     * @param mixed $data
      *
      * @return Proxy
      */
@@ -231,16 +284,16 @@ class Proxy
     }
 
     /**
-     * @param  Request  $request
+     * @param Request $request
      * @param $service
      * @param $method
      * @param $path
-     * @param  null  $modelId
-     * @param  array  $data
-     * @param  array  $headers
+     * @param null $modelId
+     * @param array $data
+     * @param array $headers
      *
-     * @return mixed
-     * @throws ServiceProxyException
+     * @return mixed|BSProxyResponse
+     * @throws ServiceProxyException|FileNotFoundException
      */
     public function makeRequest(
         $request,
@@ -255,9 +308,9 @@ class Proxy
             $this->setRequest($request);
         }
 
-        $this->setServiceUrl($service);
+        $this->setService($service);
 
-        if (!empty($headers)) {
+        if ( ! empty($headers)) {
             $this->addHeaders($headers);
         }
 
@@ -272,9 +325,16 @@ class Proxy
         }
 
         if ($method !== null) {
-            $this->setMethod($method);
+            if (empty($this->getMethod())) {
+                $this->setMethod($method);
+            }
         }
 
+        if ( ! empty($data)) {
+            $this->setData($data);
+        }
+
+        $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
 
         if ($this->hasToken()) {
@@ -289,12 +349,61 @@ class Proxy
             );
         }
 
-        $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
-        $jsonResponse = $response->json();
+        $thisProxy = clone $this;
 
-        $this->handleRequestErrors($response, $jsonResponse);
+        if ($this->dispatch) {
+            $response = $this->dispatchRequest();
+            return $this->getProxyResponse($response, $thisProxy);
+        } else {
+            $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
+            $jsonResponse = $response->json();
+        }
 
+        if ($this->withProxyResponse) {
+            return $this->getProxyResponse($response, $thisProxy);
+        }
+
+        $this->handleRequestErrors($response, $response->json());
+        $this->resetData();
         return $jsonResponse;
+    }
+
+    /**
+     * @param $response
+     * @param $thisProxy
+     * @return BSProxyResponse
+     */
+    private function getProxyResponse($response, $thisProxy)
+    {
+        $this->resetData();
+        return new BSProxyResponse($response, $thisProxy);
+    }
+
+    /**
+     * @return $this
+     */
+    public function withProxyResponse()
+    {
+        $this->withProxyResponse = true;
+        return $this;
+    }
+
+    /**
+     *
+     */
+    protected function resetData()
+    {
+        $this->withProxyResponse = false;
+        $this->request = null;
+        $this->method = null;
+        $this->headers = ["Accept" => "application/json"];
+        $this->path = null;
+        $this->data = [];
+        $this->token = null;
+        $this->modelId = null;
+        $this->serviceUrl = null;
+        $this->dispatch = false;
+        $this->service = null;
     }
 
     /**
@@ -306,21 +415,19 @@ class Proxy
     }
 
     /**
-     * @param  null  $token
+     * @param null $token
      *
      * @return mixed|string|null
      */
     public function setToken($token = null)
     {
-        if ($token !== null) {
-            $this->token = $token;
-        } else {
+        if ($token === null) {
             $token = $this->headers['token'] ?? null;
             if ($this->request !== null) {
                 $token = $this->request->bearerToken();
             }
-            $this->token = $token;
         }
+        $this->token = $token;
         return $this;
     }
 
@@ -405,4 +512,63 @@ class Proxy
         }
         return null;
     }
+
+    /**
+     * @return $this
+     */
+    public function setDispatch()
+    {
+        $this->dispatch = true;
+        return $this;
+    }
+
+    /**
+     * @param $name
+     * @param $file
+     * @return $this
+     */
+    public function addFile($name, $file)
+    {
+        if ( ! is_array($file) && ! $file instanceof UploadedFile) {
+            throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
+        }
+
+        if ($file instanceof UploadedFile) {
+            $this->files[$name] = $file;
+            return $this;
+        }
+
+        $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
+        if (count($fileData) <> 4) {
+            throw new InvalidArgumentException(
+                'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
+            );
+        }
+        $this->files[$name] = $fileData;
+        return $this;
+    }
+
+
+    /**
+     * @param $service
+     * @return mixed|BSProxyResponse
+     * @throws ServiceProxyException
+     */
+    public function dispatch($service)
+    {
+        return $this->setDispatch()->makeRequest(null, $service);
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function dispatchRequest()
+    {
+        $request = Request::create($this->getServiceRequestUrl(), $this->getMethod(), $this->getData());
+        if ($this->files) {
+            $request->files = new FileBag($this->files);
+        }
+        return app()->handle($request);
+    }
+
 }

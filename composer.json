@@ -3,7 +3,8 @@
     "description": "for proxy service and use with name and other utilities",
     "type": "library",
     "require": {
-        "laravel/framework": "^8.0"
+        "php": "^7.3",
+        "laravel/framework": "^7.0|^8.0"
     },
     "license": "MIT",
     "authors": [
