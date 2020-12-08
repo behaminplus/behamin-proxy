@@ -1,4 +1,5 @@
 <?php
+
 namespace BSProxy\Exceptions;
 
 use Exception;
@@ -26,8 +27,8 @@ class ServiceProxyException extends Exception
         return $this->_options;
     }
 
-    public function getNext(){
+    public function getNext()
+    {
         return $this->_next;
     }
-
 }

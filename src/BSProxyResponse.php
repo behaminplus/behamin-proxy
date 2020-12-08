@@ -2,10 +2,8 @@
 
 namespace BSProxy;
 
-
 use BSProxy\Exceptions\ServiceProxyException;
 use Illuminate\Http\Client\Response;
-use function Livewire\str;
 
 class BSProxyResponse
 {
@@ -56,7 +54,7 @@ class BSProxyResponse
             if ($this->retException) {
                 throw new ServiceProxyException(
                     'data object not exists from ' .
-                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
+                        (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
                 );
             }
             return null;
@@ -68,16 +66,17 @@ class BSProxyResponse
         return $this->response->getStatusCode();
     }
 
-    public function withException($exceptionStack = ['request' => 'failed.']){
+    public function withException($exceptionStack = ['request' => 'failed.'])
+    {
         if ($this->getStatusCode() != $this->successStatusCode) {
             $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
-            if ($this->addInfoToException){
+            if ($this->addInfoToException) {
                 $exceptionStack['info'] = $this->getInfo();
             }
-            if ($this->addResponseToException){
-                if ($this->hasError()){
+            if ($this->addResponseToException) {
+                if ($this->hasError()) {
                     $exceptionStack['error_response'] = $this->getArrayErrors();
-                } else{
+                } else {
                     $exceptionStack['response'] = json_decode($this->getBody());
                 }
             }
@@ -86,12 +85,14 @@ class BSProxyResponse
         return $this;
     }
 
-    public function withResponseInException(){
+    public function withResponseInException()
+    {
         $this->addResponseToException = true;
         return $this;
     }
 
-    public function withInfo(){
+    public function withInfo()
+    {
         $this->addInfoToException = true;
         return $this;
     }
@@ -144,7 +145,7 @@ class BSProxyResponse
             if ($this->retException) {
                 throw new ServiceProxyException(
                     'data->items object not exists from ' .
-                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
+                        (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
                 );
             }
             return null;
