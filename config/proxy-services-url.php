@@ -10,5 +10,5 @@ return [
      * 'SMS'            => "sms-service/"
      **/
 
-    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', $_SERVER['HTTP_HOST'])
+    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', url(env('HTTP_HOST')))
 ];
