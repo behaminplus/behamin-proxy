@@ -33,14 +33,278 @@ class Proxy
     private $token = null;
     private $modelId = null;
     private $serviceUrl = null;
-    private $dispatch = false;
     private $service = null;
     private $files = null;
+    private $dispatch = false;
     private $withProxyResponse = false;
 
     public function __construct()
     {
         $this->path = '/';
+    }
+
+    /**
+     * @param Request $request
+     * @param $service
+     * @param $method
+     * @param $path
+     * @param null $modelId
+     * @param array $data
+     * @param array $headers
+     *
+     * @return mixed|BSProxyResponse
+     * @throws ServiceProxyException|FileNotFoundException
+     */
+    public function makeRequest(
+        $request,
+        $service,
+        $method = 'get',
+        $path = null,
+        $modelId = null,
+        $data = [],
+        $headers = []
+    ) {
+        if ($request !== null) {
+            $this->setRequest($request);
+        }
+
+        $this->setService($service);
+
+        if (!empty($headers)) {
+            $this->addHeaders($headers);
+        }
+
+        $this->setToken();
+
+        if ($path !== null) {
+            $this->setPath($path);
+        }
+
+        if ($modelId !== null) {
+            $this->setModelId($modelId);
+        }
+
+        if ($method !== null and empty($this->getMethod())) {
+            $this->setMethod($method);
+        }
+
+        if (!empty($data)) {
+            $this->setData($data);
+        }
+
+        $headers = $this->getHeaders();
+        $response = Http::withHeaders($headers);
+
+        if ($this->hasToken()) {
+            $response = $response->withToken($this->getToken());
+        }
+
+        if ($request && $request->hasFile('media')) {
+            $response = $response->attach(
+                'media',
+                $request->file('media')->get(),
+                $request->file('media')->getClientOriginalName()
+            );
+        }
+
+        $thisProxy = clone $this;
+
+        if ($this->isDispatchRequest()) {
+            $response = $this->dispatchRequest();
+            return $this->getProxyResponse($response, $thisProxy);
+        } else {
+            $response = $response->{$this->getMethod()}($this->getServiceRequestUrl(), $this->getData());
+        }
+        if ($this->isWithProxyResponse()) {
+            return $this->getProxyResponse($response, $thisProxy);
+        } else {
+            $jsonResponse = $response->json();
+            $this->handleRequestErrors($response, $jsonResponse);
+            $this->resetData();
+            return $jsonResponse;
+        }
+    }
+
+    /**
+     * @param $response
+     * @param $jsonResponse
+     *
+     * @throws ServiceProxyException
+     */
+    protected function handleRequestErrors($response, $jsonResponse): void
+    {
+        if ($this->isBadRequest($response)) {
+            $errorMessage = $errors = null;
+            if ($this->responseHasError($jsonResponse)) {
+                $errorMessage = $this->getResponseMessage($jsonResponse);
+                $errors = $this->getResponseError($jsonResponse);
+            }
+            //// TODO: Add option "Break" or "Halt"? <-> Exception Stops app
+            //
+            throw new ServiceProxyException(
+                $errorMessage,
+                $response->status(),
+                $errors
+            );
+        }
+    }
+
+    /**
+     * @param $jsonResponse
+     * @return bool
+     */
+    private function responseHasError($jsonResponse): bool
+    {
+        return is_array($jsonResponse) and (array_key_exists('error', $jsonResponse) or
+            array_key_exists('message', $jsonResponse));
+    }
+
+    /**
+     * @param $jsonResponse
+     * @return mixed
+     */
+    private function getResponseMessage($jsonResponse)
+    {
+        if (array_key_exists('error', $jsonResponse) and array_key_exists('message', $jsonResponse['error'])) {
+            return $jsonResponse['error']['message'];
+        } elseif (array_key_exists('message', $jsonResponse)) {
+            return $jsonResponse['message'];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @param $jsonResponse
+     *
+     * @return mixed
+     */
+    private function getResponseError($jsonResponse)
+    {
+        if (array_key_exists('error', $jsonResponse) and array_key_exists('errors', $jsonResponse['error'])) {
+            return $jsonResponse['error']['errors'];
+        } elseif (array_key_exists('trace', $jsonResponse)) {
+            return $jsonResponse['trace'];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @param $name
+     * @param $file
+     * @return $this
+     */
+    public function addFile($name, $file)
+    {
+        if (!is_array($file) or !$file instanceof UploadedFile) {
+            throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
+        }
+
+        if ($file instanceof UploadedFile) {
+            $this->files[$name] = $file;
+            return $this;
+        }
+
+        $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
+        if (count($fileData) <> 4) {
+            throw new InvalidArgumentException(
+                'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
+            );
+        }
+        $this->files[$name] = $fileData;
+        return $this;
+    }
+
+
+    /**
+     * @param $response
+     * @param $thisProxy
+     * @return BSProxyResponse
+     */
+    private function getProxyResponse($response, $thisProxy)
+    {
+        $this->resetData();
+        return new BSProxyResponse($response, $thisProxy);
+    }
+
+    /**
+     * @return $this
+     */
+    public function withProxyResponse()
+    {
+        $this->withProxyResponse = true;
+        return $this;
+    }
+
+    protected function isWithProxyResponse(): bool
+    {
+        return $this->withProxyResponse;
+    }
+
+    /**
+     * @param $service
+     * @return mixed|BSProxyResponse
+     * @throws ServiceProxyException
+     */
+    public function dispatch($service)
+    {
+        return $this->setDispatch()->makeRequest(null, $service);
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function dispatchRequest()
+    {
+        $request = Request::create($this->getServiceRequestUrl(), $this->getMethod(), $this->getData());
+        if ($this->files) {
+            $request->files = new FileBag($this->files);
+        }
+        return app()->handle($request);
+    }
+
+    /**
+     * @param $response
+     * @return bool
+     */
+    private function isBadRequest($response): bool
+    {
+        return $response->status() >= 400 && $response->status() <= 503;
+    }
+
+    protected function isDispatchRequest(): bool
+    {
+        return $this->dispatch;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setDispatch()
+    {
+        $this->dispatch = true;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getServiceRequestUrl()
+    {
+        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
+
+        if ($path = trim($this->getPath(), '/')) {
+            if (!Str::contains($path, '?')) {
+                $path .= '/';
+            }
+        }
+
+        if ($modelId = trim($modelId = $this->getModelId(), '/')) {
+            $modelId .= '/';
+        }
+
+        return trim($serviceUrl . $modelId . $path, '/');
     }
 
     /**
@@ -85,16 +349,23 @@ class Proxy
         return $this;
     }
 
+    /**
+     *
+     */
+    public function getServiceUrl()
+    {
+        return $this->serviceUrl;
+    }
 
     /**
      * @param $service
-     * @param string $basicUrl
+     * @param string $baseUrl
      * @return self
      * @throws ServiceProxyException
      */
-    public function setServiceUrl($service, $basicUrl = 'GLOBAL_APP_URL'): self
+    public function setServiceUrl($service, $baseUrl = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-services-url.' . $basicUrl));
+        $parsedUrl = parse_url(config('proxy-services-url.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException('host address not found in the config file.');
         }
@@ -118,35 +389,6 @@ class Proxy
         $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
         return $this;
     }
-
-    /**
-     *
-     */
-    public function getServiceUrl()
-    {
-        return $this->serviceUrl;
-    }
-
-    /**
-     * @return string
-     */
-    public function getServiceRequestUrl()
-    {
-        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
-
-        if ($path = trim($this->getPath(), '/')) {
-            if (!Str::contains($path, '?')) {
-                $path .= '/';
-            }
-        }
-
-        if ($modelId = trim($modelId = $this->getModelId(), '/')) {
-            $modelId .= '/';
-        }
-
-        return trim($serviceUrl . $modelId . $path, '/');
-    }
-
 
     /**
      * @return string
@@ -193,9 +435,9 @@ class Proxy
     protected function fetchFromRequest($request)
     {
         if ($request !== null) {
-            $this->method = $request->method();
-            $this->path = $request->path();
-            $this->data = $request->all();
+            $this->setMethod($request->method());
+            $this->setPath($request->path());
+            $this->setData($request->all());
         }
     }
 
@@ -280,128 +522,6 @@ class Proxy
         return $this;
     }
 
-    /**
-     * @param Request $request
-     * @param $service
-     * @param $method
-     * @param $path
-     * @param null $modelId
-     * @param array $data
-     * @param array $headers
-     *
-     * @return mixed|BSProxyResponse
-     * @throws ServiceProxyException|FileNotFoundException
-     */
-    public function makeRequest(
-        $request,
-        $service,
-        $method = 'get',
-        $path = null,
-        $modelId = null,
-        $data = [],
-        $headers = []
-    ) {
-        if ($request !== null) {
-            $this->setRequest($request);
-        }
-
-        $this->setService($service);
-
-        if (!empty($headers)) {
-            $this->addHeaders($headers);
-        }
-
-        $this->setToken();
-
-        if ($path !== null) {
-            $this->setPath($path);
-        }
-
-        if ($modelId !== null) {
-            $this->setModelId($modelId);
-        }
-
-        if ($method !== null) {
-            if (empty($this->getMethod())) {
-                $this->setMethod($method);
-            }
-        }
-
-        if (!empty($data)) {
-            $this->setData($data);
-        }
-
-        $headers = $this->getHeaders();
-        $response = Http::withHeaders($headers);
-
-        if ($this->hasToken()) {
-            $response = $response->withToken($this->getToken());
-        }
-
-        if ($request && $request->hasFile('media')) {
-            $response = $response->attach(
-                'media',
-                $request->file('media')->get(),
-                $request->file('media')->getClientOriginalName()
-            );
-        }
-
-        $thisProxy = clone $this;
-
-        if ($this->dispatch) {
-            $response = $this->dispatchRequest();
-            return $this->getProxyResponse($response, $thisProxy);
-        } else {
-            $response = $response->{$this->method}($this->getServiceRequestUrl(), $data);
-            $jsonResponse = $response->json();
-        }
-
-        if ($this->withProxyResponse) {
-            return $this->getProxyResponse($response, $thisProxy);
-        }
-
-        $this->handleRequestErrors($response, $response->json());
-        $this->resetData();
-        return $jsonResponse;
-    }
-
-    /**
-     * @param $response
-     * @param $thisProxy
-     * @return BSProxyResponse
-     */
-    private function getProxyResponse($response, $thisProxy)
-    {
-        $this->resetData();
-        return new BSProxyResponse($response, $thisProxy);
-    }
-
-    /**
-     * @return $this
-     */
-    public function withProxyResponse()
-    {
-        $this->withProxyResponse = true;
-        return $this;
-    }
-
-    /**
-     *
-     */
-    protected function resetData()
-    {
-        $this->withProxyResponse = false;
-        $this->request = null;
-        $this->method = null;
-        $this->headers = ["Accept" => "application/json"];
-        $this->path = null;
-        $this->data = [];
-        $this->token = null;
-        $this->modelId = null;
-        $this->serviceUrl = null;
-        $this->dispatch = false;
-        $this->service = null;
-    }
 
     /**
      * @return bool
@@ -409,6 +529,14 @@ class Proxy
     protected function hasToken(): bool
     {
         return ($this->getToken() !== null);
+    }
+
+    /**
+     * @return null
+     */
+    public function getToken()
+    {
+        return $this->token;
     }
 
     /**
@@ -429,139 +557,20 @@ class Proxy
     }
 
     /**
-     * @return null
-     */
-    public function getToken()
-    {
-        return $this->token;
-    }
-
-    /**
-     * @param $response
-     * @param $jsonResponse
      *
-     * @throws ServiceProxyException
      */
-    protected function handleRequestErrors($response, $jsonResponse): void
+    protected function resetData()
     {
-        if ($this->isBadRequest($response)) {
-            $errorMessage = $errors = null;
-            if ($this->responseHasError($jsonResponse)) {
-                $errorMessage = $this->getResponseMessage($jsonResponse);
-                $errors = $this->getResponseError($jsonResponse);
-            }
-
-            throw new ServiceProxyException(
-                $errorMessage ?: 'request not any response in body.',
-                $response->status(),
-                null,
-                $errors
-            );
-        }
-    }
-
-    /**
-     * @param $response
-     * @return bool
-     */
-    private function isBadRequest($response): bool
-    {
-        //TODO check Conflict with laravel error code 500
-        return $response->status() >= 400 && $response->status() < 500;
-    }
-
-    /**
-     * @param $jsonResponse
-     * @return bool
-     */
-    private function responseHasError($jsonResponse): bool
-    {
-        return is_array($jsonResponse)
-            && array_key_exists('error', $jsonResponse);
-    }
-
-    /**
-     * @param $jsonResponse
-     * @return mixed
-     */
-    private function getResponseMessage($jsonResponse)
-    {
-        if (array_key_exists('message', $jsonResponse['error'])) {
-            $errorMessage = $jsonResponse['error']['message'];
-        } else {
-            $errorMessage = $jsonResponse['error'];
-        }
-        return $errorMessage;
-    }
-
-    /**
-     * @param $jsonResponse
-     *
-     * @return mixed
-     */
-    private function getResponseError($jsonResponse)
-    {
-        if (array_key_exists('errors', $jsonResponse['error'])) {
-            return $jsonResponse['error']['errors'];
-        }
-        return null;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setDispatch()
-    {
-        $this->dispatch = true;
-        return $this;
-    }
-
-    /**
-     * @param $name
-     * @param $file
-     * @return $this
-     */
-    public function addFile($name, $file)
-    {
-        if (!is_array($file) && !$file instanceof UploadedFile) {
-            throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
-        }
-
-        if ($file instanceof UploadedFile) {
-            $this->files[$name] = $file;
-            return $this;
-        }
-
-        $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
-        if (count($fileData) <> 4) {
-            throw new InvalidArgumentException(
-                'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
-            );
-        }
-        $this->files[$name] = $fileData;
-        return $this;
-    }
-
-
-    /**
-     * @param $service
-     * @return mixed|BSProxyResponse
-     * @throws ServiceProxyException
-     */
-    public function dispatch($service)
-    {
-        return $this->setDispatch()->makeRequest(null, $service);
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function dispatchRequest()
-    {
-        $request = Request::create($this->getServiceRequestUrl(), $this->getMethod(), $this->getData());
-        if ($this->files) {
-            $request->files = new FileBag($this->files);
-        }
-        return app()->handle($request);
+        $this->withProxyResponse = false;
+        $this->request = null;
+        $this->method = null;
+        $this->headers = ["Accept" => "application/json"];
+        $this->path = null;
+        $this->data = [];
+        $this->token = null;
+        $this->modelId = null;
+        $this->serviceUrl = null;
+        $this->dispatch = false;
+        $this->service = null;
     }
 }
