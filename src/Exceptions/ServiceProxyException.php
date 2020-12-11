@@ -3,32 +3,35 @@
 namespace BSProxy\Exceptions;
 
 use Exception;
+use Illuminate\Http\Request;
+use stdClass;
 
 class ServiceProxyException extends Exception
 {
-    private $_options;
-    private $_next;
+    protected $message;
+    protected $code;
+    protected $errors;
 
     public function __construct(
         $message,
-        $code = 0,
-        Exception $previous = null,
-        $options = array('params'),
-        $next = null
+        $code = 400,
+        array $errors = null
     ) {
-        parent::__construct($message, $code, $previous);
-
-        $this->_options = $options;
-        $this->_next = $next;
+        parent::__construct($message, $code);
+        $this->errors = $errors;
+        $this->code = $code;
+        $this->message = $message;
     }
 
-    public function GetOptions()
+    public function render(Request $request)
     {
-        return $this->_options;
-    }
-
-    public function getNext()
-    {
-        return $this->_next;
+        return response()->json([
+            'data' => new stdClass(),
+            'message' => null,
+            'error' => [
+                'message' => $this->message,
+                'errors' => $this->errors
+            ]
+        ], $this->code);
     }
 }
