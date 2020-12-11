@@ -139,7 +139,7 @@ class Proxy
                 $errorMessage = $this->getResponseMessage($jsonResponse);
                 $errors = $this->getResponseError($jsonResponse);
             }
-            //// TODO: Add option "Break" or "Halt"? <-> Exception Stops app
+            //// TODO: Add option "Break" or "Halt"? <--> Exception Stops app
             //
             throw new ServiceProxyException(
                 $errorMessage,
