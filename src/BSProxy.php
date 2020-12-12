@@ -1,5 +1,8 @@
 <?php
+
 namespace BSProxy;
+
+use Illuminate\Support\Facades\Facade;
 
 /**
  * Class BSProxy
@@ -19,9 +22,10 @@ namespace BSProxy;
  * @method static Proxy addFile($name, $file)
  * @method static string getServiceRequestUrl()
  */
-class BSProxy extends \Illuminate\Support\Facades\Facade
+class BSProxy extends Facade
 {
-    protected static function getFacadeAccessor(){
+    protected static function getFacadeAccessor()
+    {
         return Proxy::class;
     }
 }
