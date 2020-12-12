@@ -1,6 +1,14 @@
 {
     "name": "behamin/service-proxy",
     "description": "for proxy service and use with name and other utilities",
+    "keywords": [
+        "behamin",
+        "request",
+        "http",
+        "laravel",
+        "guzzle",
+        "service"
+    ],
     "type": "library",
     "require": {
         "php": "^7.3",
