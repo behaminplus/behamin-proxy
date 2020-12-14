@@ -64,17 +64,15 @@ class Proxy
         $data = [],
         $headers = []
     ) {
+        if (!empty($headers)) {
+            $this->addHeaders($headers);
+        }
+
         if ($request !== null) {
             $this->setRequest($request);
         }
 
         $this->setService($service);
-
-        if (!empty($headers)) {
-            $this->addHeaders($headers);
-        }
-
-        $this->setToken();
 
         if ($path !== null) {
             $this->setPath($path);
@@ -113,7 +111,10 @@ class Proxy
             $response = $this->dispatchRequest();
             return $this->getProxyResponse($response, $thisProxy);
         } else {
-            $response = $response->{$this->getMethod()}($this->getServiceRequestUrl(), $this->getData());
+            $response = $response->{$this->getMethod()}(
+                $this->getServiceRequestUrl(),
+                $this->getData()
+            );
         }
         if ($this->isWithProxyResponse()) {
             return $this->getProxyResponse($response, $thisProxy);
@@ -316,8 +317,9 @@ class Proxy
     }
 
     /**
-     * @param string|array $service
-     * @param string $app
+     * @param  string|array  $service
+     * @param  string  $app
+     *
      * @return Proxy
      * @throws ServiceProxyException
      */
@@ -367,10 +369,12 @@ class Proxy
     {
         $parsedUrl = parse_url(config('proxy-services-url.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
-            throw new ServiceProxyException('host address not found in the config file.');
+            throw new ServiceProxyException(
+                'host address not found in the config file.'
+            );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
 
         $port = '';
@@ -399,7 +403,7 @@ class Proxy
     }
 
     /**
-     * @param string $method
+     * @param  string  $method
      *
      * @return Proxy
      */
@@ -418,7 +422,7 @@ class Proxy
     }
 
     /**
-     * @param null $request
+     * @param  null  $request
      *
      * @return Proxy
      */
@@ -438,6 +442,9 @@ class Proxy
             $this->setMethod($request->method());
             $this->setPath($request->path());
             $this->setData($request->all());
+            if (! empty($token = $this->request->bearerToken())){
+                $this->token = $token;
+            }
         }
     }
 
@@ -450,7 +457,7 @@ class Proxy
     }
 
     /**
-     * @param string $path
+     * @param  string  $path
      *
      * @return Proxy
      */
@@ -469,7 +476,7 @@ class Proxy
     }
 
     /**
-     * @param string[] $headers
+     * @param  string[]  $headers
      *
      * @return Proxy
      */
@@ -512,7 +519,7 @@ class Proxy
     }
 
     /**
-     * @param mixed $data
+     * @param  mixed  $data
      *
      * @return Proxy
      */
@@ -521,7 +528,6 @@ class Proxy
         $this->data = $data;
         return $this;
     }
-
 
     /**
      * @return bool
@@ -540,18 +546,12 @@ class Proxy
     }
 
     /**
-     * @param null $token
+     * @param  null  $token
      *
      * @return mixed|string|null
      */
-    public function setToken($token = null)
+    public function setToken($token)
     {
-        if ($token === null) {
-            $token = $this->headers['token'] ?? null;
-            if ($this->request !== null) {
-                $token = $this->request->bearerToken();
-            }
-        }
         $this->token = $token;
         return $this;
     }
