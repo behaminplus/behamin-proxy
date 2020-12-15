@@ -166,8 +166,10 @@ class Proxy
      */
     private function getResponseMessage($jsonResponse)
     {
-        if (array_key_exists('error', $jsonResponse) and array_key_exists('message', $jsonResponse['error'])) {
+        if (array_key_exists('error', $jsonResponse) and (is_array($jsonResponse['error']) and array_key_exists('message', $jsonResponse['error']))) {
             return $jsonResponse['error']['message'];
+        } elseif (array_key_exists('error', $jsonResponse) and is_string($jsonResponse['error'])) {
+            return $jsonResponse['error'];
         } elseif (array_key_exists('message', $jsonResponse)) {
             return $jsonResponse['message'];
         } else {
@@ -182,7 +184,7 @@ class Proxy
      */
     private function getResponseError($jsonResponse)
     {
-        if (array_key_exists('error', $jsonResponse) and array_key_exists('errors', $jsonResponse['error'])) {
+        if (array_key_exists('error', $jsonResponse) and (is_array($jsonResponse['error']) and array_key_exists('errors', $jsonResponse['error']))) {
             return $jsonResponse['error']['errors'];
         } elseif (array_key_exists('trace', $jsonResponse)) {
             return $jsonResponse['trace'];
@@ -374,7 +376,7 @@ class Proxy
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'];
 
         $port = '';
@@ -442,7 +444,7 @@ class Proxy
             $this->setMethod($request->method());
             $this->setPath($request->path());
             $this->setData($request->all());
-            if (! empty($token = $this->request->bearerToken())){
+            if (!empty($token = $this->request->bearerToken())) {
                 $this->token = $token;
             }
         }
