@@ -106,7 +106,7 @@ class BSProxyResponse
 
     public function hasError($key = null)
     {
-        if (!$this->bodyJson->error) {
+        if (empty($this->bodyJson->error) || ! $this->bodyJson->error) {
             return false;
         }
 
