@@ -104,12 +104,14 @@ class Proxy
                 $request->file('media')->getClientOriginalName()
             );
         }
-        if ($this->files){
+
+        if (empty($request) && $this->files){
             foreach ($this->files as $name => $file){
-                /*$response = $response->attach(
+                $response = $response->attach(
                     $name,
-                    $file->get(),
-                );*/
+                    $this->getFileContent($name),
+                    $this->getFileOriginalName($name)
+                );
             }
         }
 
@@ -244,7 +246,37 @@ class Proxy
         return $this;
     }
 
-    private function getFile($nameInRequest){
+    public function getFiles(){
+        return $this->files;
+    }
+
+    /**
+     * @param $nameInRequest
+     * @return mixed
+     */
+    private function getFileOriginalName($nameInRequest){
+        if (! empty($this->files[$nameInRequest])){
+            return $nameInRequest;
+        }
+
+        $file = $this->files[$nameInRequest];
+
+        if (is_array($file)){
+            return $file['name'];
+        }
+
+        if ($file instanceof UploadedFile){
+            return $file->getClientOriginalName();
+        }
+        return $nameInRequest;
+    }
+
+    /**
+     * @param $nameInRequest
+     * @return false|resource
+     * @throws RuntimeException
+     */
+    private function getFileContent($nameInRequest){
         if (! empty($this->files[$nameInRequest])){
             return false;
         }
@@ -254,6 +286,11 @@ class Proxy
         if (is_array($file)){
             return fopen($file['tmp_name'], 'r');
         }
+
+        if ($file instanceof UploadedFile){
+            return $file->getContents();
+        }
+        return false;
     }
 
 
