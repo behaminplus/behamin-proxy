@@ -66,6 +66,16 @@ class BSProxyResponse
         return $this->response->getStatusCode();
     }
 
+    // Determine if the status code is >= 200 and < 300...
+    function successful(){
+
+    }
+
+    // Determine if the status code is >= 400...
+    public function failed(){
+
+    }
+
     public function withException($exceptionStack = ['request' => 'failed.'])
     {
         if ($this->getStatusCode() != $this->successStatusCode) {
