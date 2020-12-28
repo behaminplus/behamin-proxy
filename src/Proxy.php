@@ -277,7 +277,7 @@ class Proxy
      * @throws RuntimeException
      */
     private function getFileContent($nameInRequest){
-        if (! empty($this->files[$nameInRequest])){
+        if (empty($this->files[$nameInRequest])){
             return false;
         }
 
@@ -288,7 +288,7 @@ class Proxy
         }
 
         if ($file instanceof UploadedFile){
-            return $file->getContents();
+            return file_get_contents($file->getPathname());
         }
         return false;
     }
