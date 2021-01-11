@@ -3,13 +3,10 @@
 namespace BSProxy;
 
 use BSProxy\Exceptions\ServiceProxyException;
-use Illuminate\Contracts\Support\Jsonable;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Client\Response;
-use phpDocumentor\Reflection\DocBlock\Serializer;
 
-class BSProxyResponse implements Responsable
+class BSProxyResponse implements \ArrayAccess, Responsable
 {
     /**
      * @var $response Response
@@ -213,6 +210,7 @@ class BSProxyResponse implements Responsable
         return isset($this->bodyJson->data, $this->bodyJson->data->items);
     }
 
+
     public function toJson($options = 0, $items = false)
     {
         if ($items && $this->hasItems()){
@@ -221,11 +219,39 @@ class BSProxyResponse implements Responsable
         if ($items && $this->hasItem()) {
             return json_encode($this->getItem(), $options);
         }
-        return $this->response->json();
+
+        return $this->response->body();
     }
+
 
     public function toResponse($request){
 
-        return (new \Illuminate\Http\Response($this->body, $this->getStatusCode(), $this->response->headers()));
+        return \response()->json($this->bodyJson)->setStatusCode($this->getStatusCode());
     }
+
+
+    public function offsetExists($offset)
+    {
+        return $this->hasItem($offset);
+    }
+
+
+    public function offsetGet($offset)
+    {
+        if ($this->offsetExists($offset)){
+            return $this->getItems()[$offset];
+        }
+        return null;
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        // TODO: Implement offsetSet() method.
+    }
+
+    public function offsetUnset($offset)
+    {
+        // TODO: Implement offsetUnset() method.
+    }
+
 }
