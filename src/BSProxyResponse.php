@@ -87,20 +87,23 @@ class BSProxyResponse implements \ArrayAccess, Responsable
     public function withException($exceptionStack = ['proxy' => 'request failed, please check errors if exists or proxy info.'])
     {
         if ($this->successful()) {
-            $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
-            if ($this->addInfoToException) {
-                $exceptionStack['info'] = $this->getInfo();
-            }
-            if ($this->addResponseToException) {
-                if ($this->hasError()) {
-                    $exceptionStack['error_response'] = $this->getArrayErrors();
-                } else {
-                    $exceptionStack['response'] = json_decode($this->getBody());
-                }
-            }
-            throw new ServiceProxyException( 'request from ' . $this->getProxy()->getService() . ' service failed.', $this->getStatusCode(), $exceptionStack);
+            return $this;
         }
-        return $this;
+
+        $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
+
+        if ($this->addInfoToException) {
+            $exceptionStack['info'] = $this->getInfo();
+        }
+
+        if ($this->addResponseToException) {
+            if ($this->hasError()) {
+                $exceptionStack['error_response'] = $this->getArrayErrors();
+            } else {
+                $exceptionStack['response'] = json_decode($this->getBody());
+            }
+        }
+        throw new ServiceProxyException( 'request from ' . $this->getProxy()->getService() . ' service failed.', $this->getStatusCode(), $exceptionStack);
     }
 
     public function withResponseInException()
