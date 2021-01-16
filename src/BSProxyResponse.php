@@ -86,7 +86,7 @@ class BSProxyResponse implements \ArrayAccess, Responsable
 
     public function withException($exceptionStack = ['proxy' => 'request failed, please check errors if exists or proxy info.'])
     {
-        if ($this->getStatusCode() != $this->successStatusCode) {
+        if ($this->successful()) {
             $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
             if ($this->addInfoToException) {
                 $exceptionStack['info'] = $this->getInfo();
