@@ -12,5 +12,5 @@ return [
     // 'TICKET'    => "ticket-service/",
     // 'SMS'       => "sms-service/"
 
-    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', url(env('HTTP_HOST')))
+    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', null)
 ];
