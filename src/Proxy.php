@@ -45,13 +45,13 @@ class Proxy
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      * @param $service
      * @param $method
      * @param $path
-     * @param null $modelId
-     * @param array $data
-     * @param array $headers
+     * @param  null  $modelId
+     * @param  array  $data
+     * @param  array  $headers
      *
      * @return mixed|BSProxyResponse
      * @throws ServiceProxyException|FileNotFoundException
@@ -100,6 +100,17 @@ class Proxy
                 $request->file('media')->getClientOriginalName()
             );
         }
+
+        if (empty($request) && $this->files){
+            foreach ($this->files as $name => $file){
+                $response = $response->attach(
+                    $name,
+                    $this->getFileContent($name),
+                    $this->getFileOriginalName($name)
+                );
+            }
+        }
+
         $thisProxy = clone $this;
         if ($this->isDispatchRequest()) {
             $response = $this->dispatchRequest();
@@ -146,23 +157,34 @@ class Proxy
 
     /**
      * @param $jsonResponse
+     *
      * @return bool
      */
     private function responseHasError($jsonResponse): bool
     {
-        return is_array($jsonResponse) and (array_key_exists('error', $jsonResponse) or
-            array_key_exists('message', $jsonResponse));
+        return is_array($jsonResponse) and (array_key_exists(
+                    'error',
+                    $jsonResponse
+                ) or
+                array_key_exists('message', $jsonResponse));
     }
 
     /**
      * @param $jsonResponse
+     *
      * @return mixed
      */
     private function getResponseMessage($jsonResponse)
     {
-        if (array_key_exists('error', $jsonResponse) and (is_array($jsonResponse['error']) and array_key_exists('message', $jsonResponse['error']))) {
+        if (array_key_exists('error', $jsonResponse) and (is_array(
+                    $jsonResponse['error']
+                ) and array_key_exists('message', $jsonResponse['error']))
+        ) {
             return $jsonResponse['error']['message'];
-        } elseif (array_key_exists('error', $jsonResponse) and is_string($jsonResponse['error'])) {
+        } elseif (array_key_exists('error', $jsonResponse) and is_string(
+                $jsonResponse['error']
+            )
+        ) {
             return $jsonResponse['error'];
         } elseif (array_key_exists('message', $jsonResponse)) {
             return $jsonResponse['message'];
@@ -178,7 +200,10 @@ class Proxy
      */
     private function getResponseError($jsonResponse)
     {
-        if (array_key_exists('error', $jsonResponse) and (is_array($jsonResponse['error']) and array_key_exists('errors', $jsonResponse['error']))) {
+        if (array_key_exists('error', $jsonResponse) and (is_array(
+                    $jsonResponse['error']
+                ) and array_key_exists('errors', $jsonResponse['error']))
+        ) {
             return $jsonResponse['error']['errors'];
         } elseif (array_key_exists('trace', $jsonResponse)) {
             return $jsonResponse['trace'];
@@ -188,14 +213,17 @@ class Proxy
     }
 
     /**
-     * @param $name
-     * @param $file
+     * @param $name string file name in request
+     * @param $file array|UploadedFile
+     *
      * @return $this
      */
     public function addFile($name, $file)
     {
-        if (!is_array($file) or !$file instanceof UploadedFile) {
-            throw new InvalidArgumentException('An uploaded file must be an array or an instance of UploadedFile.');
+        if (!is_array($file) and !($file instanceof UploadedFile)) {
+            throw new InvalidArgumentException(
+                'An uploaded file must be an array or an instance of UploadedFile.'
+            );
         }
 
         if ($file instanceof UploadedFile) {
@@ -213,10 +241,58 @@ class Proxy
         return $this;
     }
 
+    public function getFiles(){
+        return $this->files;
+    }
+
+    /**
+     * @param $nameInRequest
+     * @return mixed
+     */
+    private function getFileOriginalName($nameInRequest){
+        if (! empty($this->files[$nameInRequest])){
+            return $nameInRequest;
+        }
+
+        $file = $this->files[$nameInRequest];
+
+        if (is_array($file)){
+            return $file['name'];
+        }
+
+        if ($file instanceof UploadedFile){
+            return $file->getClientOriginalName();
+        }
+        return $nameInRequest;
+    }
+
+    /**
+     * @param $nameInRequest
+     * @return false|resource
+     * @throws RuntimeException
+     */
+    private function getFileContent($nameInRequest){
+        if (empty($this->files[$nameInRequest])){
+            return false;
+        }
+
+        $file = $this->files[$nameInRequest];
+
+        if (is_array($file)){
+            return fopen($file['tmp_name'], 'r');
+        }
+
+        if ($file instanceof UploadedFile){
+            return file_get_contents($file->getPathname());
+        }
+        return false;
+    }
+
 
     /**
      * @param $response
      * @param $thisProxy
+     *
      * @return BSProxyResponse
      */
     private function getProxyResponse($response, $thisProxy)
@@ -241,6 +317,7 @@ class Proxy
 
     /**
      * @param $service
+     *
      * @return mixed|BSProxyResponse
      * @throws ServiceProxyException
      */
@@ -254,7 +331,11 @@ class Proxy
      */
     protected function dispatchRequest()
     {
-        $request = Request::create($this->getServiceRequestUrl(), $this->getMethod(), $this->getData());
+        $request = Request::create(
+            $this->getServiceRequestUrl(),
+            $this->getMethod(),
+            $this->getData()
+        );
         if ($this->files) {
             $request->files = new FileBag($this->files);
         }
@@ -263,6 +344,7 @@ class Proxy
 
     /**
      * @param $response
+     *
      * @return bool
      */
     private function isBadRequest($response): bool
@@ -289,7 +371,7 @@ class Proxy
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
+        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
 
         if ($path = trim($this->getPath(), '/')) {
             if (!Str::contains($path, '?')) {
@@ -357,36 +439,37 @@ class Proxy
 
     /**
      * @param $service
-     * @param string $baseUrl
+     * @param  string  $baseUrl
+     *
      * @return self
      * @throws ServiceProxyException
      */
     public function setServiceUrl($service, $baseUrl = 'GLOBAL_APP_URL'): self
     {
-        $parsedUrl = parse_url(config('proxy-services-url.' . $baseUrl));
+        $parsedUrl = parse_url(config('proxy-services-url.'.$baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
                 'host address not found in the config file.'
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
 
         $port = '';
         if (!empty($parsedUrl['port'])) {
-            $port = ':' . $parsedUrl['port'];
+            $port = ':'.$parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('proxy-services-url.' . $service, null);
+        $path .= config('proxy-services-url.'.$service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service . ' service url address not found.'
+                $service.' service url address not found.'
             );
         }
 
-        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
         return $this;
     }
 
