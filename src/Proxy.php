@@ -37,6 +37,7 @@ class Proxy
     private $files = null;
     private $dispatch = false;
     private $withProxyResponse = false;
+    private $breakOnError = true;
 
     public function __construct()
     {
@@ -61,42 +62,37 @@ class Proxy
         $method = 'get',
         $path = null,
         $modelId = null,
-        $data = [],
-        $headers = []
+        array $data = [],
+        array $headers = []
     ) {
+        $this->setService($service);
         if (!empty($headers)) {
-            $this->addHeaders($headers);
+            if (is_array($headers[0])) {
+                $this->addHeaders($headers);
+            } else {
+                $this->addHeader($headers);
+            }
         }
-
         if ($request !== null) {
             $this->setRequest($request);
         }
-
-        $this->setService($service);
-
         if ($path !== null) {
             $this->setPath($path);
         }
-
         if ($modelId !== null) {
             $this->setModelId($modelId);
         }
-
         if ($method !== null and empty($this->getMethod())) {
             $this->setMethod($method);
         }
-
         if (!empty($data)) {
             $this->setData($data);
         }
-
         $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
-
         if ($this->hasToken()) {
             $response = $response->withToken($this->getToken());
         }
-
         if ($request && $request->hasFile('media')) {
             $response = $response->attach(
                 'media',
@@ -104,14 +100,12 @@ class Proxy
                 $request->file('media')->getClientOriginalName()
             );
         }
-
         $thisProxy = clone $this;
-
         if ($this->isDispatchRequest()) {
             $response = $this->dispatchRequest();
             return $this->getProxyResponse($response, $thisProxy);
         } else {
-            $response = $response->{$this->getMethod()}(
+            $response = $response->{strtolower($this->getMethod())}(
                 $this->getServiceRequestUrl(),
                 $this->getData()
             );
@@ -140,13 +134,13 @@ class Proxy
                 $errorMessage = $this->getResponseMessage($jsonResponse);
                 $errors = $this->getResponseError($jsonResponse);
             }
-            //// TODO: Add option "Break" or "Halt"? <--> Exception Stops app
-            //
-            throw new ServiceProxyException(
-                $errorMessage,
-                $response->status(),
-                $errors
-            );
+            if ($this->breakOnError()) {
+                throw new ServiceProxyException(
+                    $errorMessage,
+                    $response->status(),
+                    $errors
+                );
+            }
         }
     }
 
@@ -273,7 +267,7 @@ class Proxy
      */
     private function isBadRequest($response): bool
     {
-        return $response->status() >= 400 && $response->status() <= 503;
+        return $response->status() >= 400;
     }
 
     protected function isDispatchRequest(): bool
@@ -307,7 +301,7 @@ class Proxy
             $modelId .= '/';
         }
 
-        return trim($serviceUrl . $modelId . $path, '/');
+        return trim($serviceUrl . $path . $modelId, '/');
     }
 
     /**
@@ -558,12 +552,24 @@ class Proxy
         return $this;
     }
 
+    public function withoutException()
+    {
+        $this->breakOnError = false;
+        return $this;
+    }
+
+    private function breakOnError(): bool
+    {
+        return $this->breakOnError;
+    }
+
     /**
      *
      */
     protected function resetData()
     {
         $this->withProxyResponse = false;
+        $this->breakOnError = true;
         $this->request = null;
         $this->method = null;
         $this->headers = ["Accept" => "application/json"];
