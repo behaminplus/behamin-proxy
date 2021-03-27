@@ -21,7 +21,6 @@ class BSProxyResponse implements \ArrayAccess, Responsable
     protected $retException = false;
     protected $successStatusCode;
     protected $addInfoToException = false;
-    protected $addResponseToException = false;
 
     public function setRetException()
     {
@@ -91,25 +90,15 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         }
 
         $exceptionStack = is_array($exceptionStack) ? $exceptionStack : [$exceptionStack];
-
         if ($this->addInfoToException) {
             $exceptionStack['info'] = $this->getInfo();
         }
 
-        if ($this->addResponseToException) {
-            if ($this->hasError()) {
-                $exceptionStack['error_response'] = $this->getArrayErrors();
-            } else {
-                $exceptionStack['response'] = json_decode($this->getBody());
-            }
-        }
-        throw new ServiceProxyException( 'request from ' . $this->getProxy()->getService() . ' service failed.', $this->getStatusCode(), $exceptionStack);
-    }
-
-    public function withResponseInException()
-    {
-        $this->addResponseToException = true;
-        return $this;
+        throw new ServiceProxyException(
+    'request from ' . $this->getProxy()->getService() . ' service failed.' . ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
+            $this->getStatusCode(),
+            $exceptionStack
+        );
     }
 
     public function withInfo()
@@ -173,7 +162,7 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         }
     }
 
-    public function getBody()
+    public function  getBody()
     {
         return $this->body;
     }
@@ -185,13 +174,25 @@ class BSProxyResponse implements \ArrayAccess, Responsable
 
     public function getInfo()
     {
-        return [
+
+        $info = [
             'url' => $this->getProxy()->getServiceRequestUrl(),
             'method' => $this->getProxy()->getMethod(),
             'data' => $this->getProxy()->getData(),
             'statusCode' => $this->getStatusCode(),
-            'content' => html_entity_decode(substr($this->body, 0, 1000)),
         ];
+
+        if ($this->hasError()) {
+            $info['error_response'] = $this->getArrayErrors();
+        } else {
+            $info['response'] = json_decode($this->getBody());
+        }
+
+        if (! empty($info['response']->trace) && is_array($info['response']->trace)){
+            $info['response']->trace = array_slice($info['response']->trace, 0, 5);
+        }
+
+        return $info;
     }
 
     public function hasItem($offset = null) {

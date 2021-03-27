@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Facade;
  * @package BSProxy
  * @method static BSProxyResponse|string|mixed makeRequest($request, $service, $method = 'get', $path = null, $modelId = null, $data = [], $headers = [])
  * @method static setService($service, $app = 'GLOBAL_APP_URL')
+ * @method static Proxy withoutException()
  * @method static Proxy setData($data)
  * @method static Proxy withProxyResponse()
  * @method static Proxy addHeader(array $header)
