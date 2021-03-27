@@ -66,12 +66,9 @@ class Proxy
         array $headers = []
     ) {
         $this->setService($service);
+
         if (!empty($headers)) {
-            if (is_array($headers[0])) {
-                $this->addHeaders($headers);
-            } else {
-                $this->addHeader($headers);
-            }
+            $this->addHeader($headers);
         }
         if ($request !== null) {
             $this->setRequest($request);
@@ -93,6 +90,7 @@ class Proxy
         if ($this->hasToken()) {
             $response = $response->withToken($this->getToken());
         }
+
         if ($request && $request->hasFile('media')) {
             $response = $response->attach(
                 'media',
@@ -116,7 +114,8 @@ class Proxy
             $response = $this->dispatchRequest();
             return $this->getProxyResponse($response, $thisProxy);
         } else {
-            $response = $response->{strtolower($this->getMethod())}(
+            $method = strtolower($this->getMethod());
+            $response = $response->{$method}(
                 $this->getServiceRequestUrl(),
                 $this->getData()
             );
@@ -573,19 +572,6 @@ class Proxy
     public function addHeader(array $header)
     {
         $this->headers = array_merge($this->headers, $header);
-        return $this;
-    }
-
-    /**
-     * @param $headers
-     *
-     * @return $this
-     */
-    public function addHeaders($headers)
-    {
-        foreach ($headers as $header) {
-            $this->addHeader($header);
-        }
         return $this;
     }
 
