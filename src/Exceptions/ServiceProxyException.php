@@ -1,6 +1,6 @@
 <?php
 
-namespace BSProxy\Exceptions;
+namespace Behamin\BSProxy\Exceptions;
 
 use Exception;
 use Illuminate\Http\Request;

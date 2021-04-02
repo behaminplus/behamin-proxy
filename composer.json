@@ -33,13 +33,13 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "BSProxy\\": "src/"
+            "Behamin\\BSProxy\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "BSProxy\\BSProxyServiceProvider"
+                "Behamin\\BSProxy\\BSProxyServiceProvider"
             ],
             "aliases": {
                 "BSProxy": "BSProxy"
