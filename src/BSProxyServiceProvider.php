@@ -1,6 +1,6 @@
 <?php
 
-namespace BSProxy;
+namespace Behamin\BSProxy;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -10,8 +10,8 @@ class BSProxyServiceProvider extends ServiceProvider
     {
         parent::register();
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/proxy-services-url.php',
-            'proxy-services-url'
+            __DIR__ . '/../config/bsproxy.php',
+            'bsproxy'
         );
     }
 
@@ -20,8 +20,8 @@ class BSProxyServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes(
                 [
-                    __DIR__ . '/../config/proxy-services-url.php' => config_path(
-                        'proxy-services-url.php'
+                    __DIR__ . '/../config/bsproxy.php' => config_path(
+                        'bsproxy.php'
                     )
                 ],
                 'config'
