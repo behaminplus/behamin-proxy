@@ -55,8 +55,8 @@ class Proxy
     public function makeRequest(
         $request,
         $service,
-        $method = 'get',
-        $path = null,
+        ?string $method = null,
+        ?string $path = null,
         $modelId = null,
         array $data = [],
         array $headers = []
@@ -66,17 +66,20 @@ class Proxy
         if (!empty($headers)) {
             $this->addHeaders($headers);
         }
-        if ($request !== null) {
-            $this->setRequest($request);
-        }
         if ($path !== null) {
             $this->setPath($path);
         }
         if ($modelId !== null) {
             $this->setModelId($modelId);
         }
-        if ($method !== null and empty($this->getMethod())) {
+        if (!empty($method)) {
             $this->setMethod($method);
+        }
+        if (empty($method) and $request === null) {
+            $this->setMethod('get');
+        }
+        if ($request !== null) {
+            $this->setRequest($request);
         }
         if (!empty($data)) {
             $this->setData($data);
@@ -519,9 +522,15 @@ class Proxy
     protected function fetchFromRequest($request)
     {
         if ($request !== null) {
-            $this->setMethod($request->method());
-            $this->setPath($request->path());
-            $this->setData($request->all());
+            if (empty($this->getMethod())) {
+                $this->setMethod($request->method());
+            }
+            if ($this->getPath() === null) {
+                $this->setPath($request->path());
+            }
+            if (empty($this->getData())) {
+                $this->setData($request->all());
+            }
             if (!empty($token = $this->request->bearerToken())) {
                 $this->token = $token;
             }
