@@ -4,7 +4,6 @@ namespace Behamin\BSProxy\Exceptions;
 
 use Exception;
 use Illuminate\Http\Request;
-use stdClass;
 
 class ServiceProxyException extends Exception
 {
@@ -26,7 +25,7 @@ class ServiceProxyException extends Exception
     public function render(Request $request)
     {
         return response()->json([
-            'data' => new stdClass(),
+            'data' => null,
             'message' => null,
             'error' => [
                 'message' => $this->message,
