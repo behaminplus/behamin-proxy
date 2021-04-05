@@ -1,6 +1,6 @@
 <?php
 
-namespace BSProxy;
+namespace Behamin\BSProxy;
 
 use Illuminate\Support\Facades\Facade;
 
@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Facade;
  * Class BSProxy
  * @package BSProxy
  * @method static BSProxyResponse|string|mixed makeRequest($request, $service, $method = 'get', $path = null, $modelId = null, $data = [], $headers = [])
- * @method static setService($service, $app = 'GLOBAL_APP_URL')
+ * @method static setService($service, $app = 'global_app_url')
  * @method static Proxy withoutException()
  * @method static Proxy setData($data)
  * @method static Proxy withProxyResponse()
