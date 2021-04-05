@@ -42,22 +42,23 @@ class Proxy
 
     /**
      * @param  Request  $request
-     * @param $service
-     * @param $method
-     * @param $path
-     * @param  null  $modelId
+     * @param  string  $service
+     * @param ?string  $method
+     * @param ?string  $path
+     * @param ?int  $modelId
      * @param  array  $data
      * @param  array  $headers
      *
      * @return mixed|BSProxyResponse
      * @throws ServiceProxyException|FileNotFoundException
+     * @deprecated
      */
     public function makeRequest(
         $request,
-        $service,
+        string $service,
         ?string $method = null,
         ?string $path = null,
-        $modelId = null,
+        ?int $modelId = null,
         array $data = [],
         array $headers = []
     ) {
@@ -77,12 +78,13 @@ class Proxy
         } elseif ($request === null) {
             $this->setMethod('get');
         }
-        if ($request !== null) {
-            $this->setRequest($request);
-        }
         if (!empty($data)) {
             $this->setData($data);
         }
+        if ($request !== null) {
+            $this->setRequest($request);
+        }
+
         $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
         if ($this->hasToken()) {
@@ -129,6 +131,17 @@ class Proxy
     }
 
     /**
+     * @param $service
+     *
+     * @return BSProxyResponse
+     * @throws ServiceProxyException
+     */
+    public function request($service): BSProxyResponse
+    {
+        return $this->makeRequest(null, $service);
+    }
+
+    /**
      * @param $response
      * @param $jsonResponse
      *
@@ -160,10 +173,10 @@ class Proxy
     private function responseHasError($jsonResponse): bool
     {
         return is_array($jsonResponse) and (array_key_exists(
-            'error',
-            $jsonResponse
-        ) or
-            array_key_exists('message', $jsonResponse));
+                    'error',
+                    $jsonResponse
+                ) or
+                array_key_exists('message', $jsonResponse));
     }
 
     /**
@@ -175,8 +188,8 @@ class Proxy
     {
         if (
             array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('message', $jsonResponse['error']))
+                    $jsonResponse['error']
+                ) and array_key_exists('message', $jsonResponse['error']))
         ) {
             return $jsonResponse['error']['message'];
         } elseif (
@@ -201,8 +214,8 @@ class Proxy
     {
         if (
             array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('errors', $jsonResponse['error']))
+                    $jsonResponse['error']
+                ) and array_key_exists('errors', $jsonResponse['error']))
         ) {
             return $jsonResponse['error']['errors'];
         } elseif (array_key_exists('trace', $jsonResponse)) {
@@ -248,6 +261,7 @@ class Proxy
 
     /**
      * @param $nameInRequest
+     *
      * @return mixed
      */
     private function getFileOriginalName($nameInRequest)
@@ -270,6 +284,7 @@ class Proxy
 
     /**
      * @param $nameInRequest
+     *
      * @return false|resource
      * @throws RuntimeException
      */
@@ -371,22 +386,27 @@ class Proxy
 
     /**
      * @return string
+     * @throws ServiceProxyException
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
-
+        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
+        $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
-            if (!Str::contains($path, '?')) {
+            $pathHaveQueryString = Str::contains($path, '?');
+            if (!$pathHaveQueryString) {
                 $path .= '/';
             }
         }
 
-        if ($modelId = trim($modelId = $this->getModelId(), '/')) {
-            $modelId .= '/';
+        $modelId = trim($modelId = $this->getModelId(), '/');
+        if (!empty($modelId) && $pathHaveQueryString) {
+            throw new ServiceProxyException(
+                "can't set model id when path includes query string."
+            );
         }
 
-        return trim($serviceUrl . $path . $modelId, '/');
+        return $serviceUrl.$path.$modelId;
     }
 
     /**
@@ -414,11 +434,14 @@ class Proxy
     }
 
     /**
-     *
+     * @return string|null
      */
     public function getModelId()
     {
-        return $this->modelId;
+        if ($this->modelId !== null) {
+            return $this->modelId;
+        }
+        return '';
     }
 
     /**
@@ -449,29 +472,29 @@ class Proxy
      */
     public function setServiceUrl($service, $baseUrl = 'global_app_url'): self
     {
-        $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
+        $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
                 'host address not found in the config file.'
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
 
         $port = '';
         if (!empty($parsedUrl['port'])) {
-            $port = ':' . $parsedUrl['port'];
+            $port = ':'.$parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('bsproxy.service_urls.' . $service, null);
+        $path .= config('bsproxy.service_urls.'.$service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service . ' service url address not found.'
+                $service.' service url address not found.'
             );
         }
-        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
 
         return $this;
     }
@@ -560,7 +583,10 @@ class Proxy
      */
     public function getHeaders(): array
     {
-        return array_merge($this->headers, config('bsproxy.global_headers', []));
+        return array_merge(
+            $this->headers,
+            config('bsproxy.global_headers', [])
+        );
     }
 
     /**
