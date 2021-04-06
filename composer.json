@@ -36,6 +36,12 @@
             "Behamin\\BSProxy\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Behamin\\BSProxy\\Tests" : "tests/"
+        }
+    }
+    ,
     "extra": {
         "laravel": {
             "providers": [
