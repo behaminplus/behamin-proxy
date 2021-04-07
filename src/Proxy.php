@@ -1,8 +1,8 @@
 <?php
 
-namespace Behamin\BSProxy;
+namespace Behamin\ServiceProxy;
 
-use Behamin\BSProxy\Exceptions\ServiceProxyException;
+use Behamin\ServiceProxy\Exceptions\ServiceProxyException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
