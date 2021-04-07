@@ -1,6 +1,6 @@
 {
     "name": "behamin/service-proxy",
-    "description": "for proxy service and use with name and other utilities",
+    "description": "for proxy or sending requests to other services with useful utilities",
     "keywords": [
         "behamin",
         "request",
@@ -33,19 +33,18 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "Behamin\\BSProxy\\": "src/"
+            "Behamin\\ServiceProxy\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Behamin\\BSProxy\\Tests" : "tests/"
+            "Behamin\\ServiceProxy\\Tests": "tests/"
         }
-    }
-    ,
+    },
     "extra": {
         "laravel": {
             "providers": [
-                "Behamin\\BSProxy\\BSProxyServiceProvider"
+                "Behamin\\ServiceProxy\\BSProxyServiceProvider"
             ]
         }
     }
