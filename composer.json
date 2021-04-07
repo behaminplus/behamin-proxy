@@ -38,10 +38,9 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Behamin\\BSProxy\\Tests" : "tests/"
+            "Behamin\\ServiceProxy\\Tests": "tests/"
         }
-    }
-    ,
+    },
     "extra": {
         "laravel": {
             "providers": [
