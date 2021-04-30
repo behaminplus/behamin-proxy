@@ -39,6 +39,8 @@ class Proxy
     private $dispatch = false;
     private $withProxyResponse = false;
     private $breakOnError = true;
+    private $numberOfAttempts = 1;
+    private $sleepBetweenAttempts = 0;
 
     /**
      * @param  Request  $request
@@ -87,6 +89,10 @@ class Proxy
 
         $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
+        $numberOfAttempts = $this->getNumberOfAttempts();
+        if ($numberOfAttempts > 1) {
+            $response = $response->retry($numberOfAttempts, $this->getSleepBetweenAttempts());
+        }
         if ($this->hasToken()) {
             $response = $response->withToken($this->getToken());
         }
@@ -589,6 +595,22 @@ class Proxy
         );
     }
 
+    protected function getNumberOfAttempts(): int
+    {
+        return $this->numberOfAttempts;
+    }
+
+    protected function getSleepBetweenAttempts(): int
+    {
+        return ($this->sleepBetweenAttempts > 0) ? $this->sleepBetweenAttempts : 0;
+    }
+
+    public function setRetry(int $attempts, int $sleepInMilliseconds)
+    {
+        $this->numberOfAttempts = $attempts;
+        $this->sleepBetweenAttempts = $sleepInMilliseconds;
+    }
+
     /**
      * @param  string[]  $headers
      *
@@ -685,5 +707,7 @@ class Proxy
         $this->serviceUrl = null;
         $this->dispatch = false;
         $this->service = null;
+        $this->numberOfAttempts = 1;
+        $this->sleepBetweenAttempts = 0;
     }
 }
