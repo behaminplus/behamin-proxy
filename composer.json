@@ -45,7 +45,10 @@
         "laravel": {
             "providers": [
                 "Behamin\\ServiceProxy\\BSProxyServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "BSProxy": "Behamin\\ServiceProxy\\Proxy"
+            }
         }
     }
 }

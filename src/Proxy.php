@@ -39,6 +39,8 @@ class Proxy
     private $dispatch = false;
     private $withProxyResponse = false;
     private $breakOnError = true;
+    private $numberOfAttempts = 1;
+    private $sleepBetweenAttempts = 0;
 
     /**
      * @param  Request  $request
@@ -87,6 +89,10 @@ class Proxy
 
         $headers = $this->getHeaders();
         $response = Http::withHeaders($headers);
+        $numberOfAttempts = $this->getNumberOfAttempts();
+        if ($numberOfAttempts > 1) {
+            $response = $response->retry($numberOfAttempts, $this->getSleepBetweenAttempts());
+        }
         if ($this->hasToken()) {
             $response = $response->withToken($this->getToken());
         }
@@ -133,10 +139,10 @@ class Proxy
     /**
      * @param $service
      *
-     * @return BSProxyResponse
+     * 
      * @throws ServiceProxyException
      */
-    public function request($service): BSProxyResponse
+    public function request($service)
     {
         return $this->makeRequest(null, $service);
     }
@@ -173,10 +179,10 @@ class Proxy
     private function responseHasError($jsonResponse): bool
     {
         return is_array($jsonResponse) and (array_key_exists(
-                    'error',
-                    $jsonResponse
-                ) or
-                array_key_exists('message', $jsonResponse));
+            'error',
+            $jsonResponse
+        ) or
+            array_key_exists('message', $jsonResponse));
     }
 
     /**
@@ -188,8 +194,8 @@ class Proxy
     {
         if (
             array_key_exists('error', $jsonResponse) and (is_array(
-                    $jsonResponse['error']
-                ) and array_key_exists('message', $jsonResponse['error']))
+                $jsonResponse['error']
+            ) and array_key_exists('message', $jsonResponse['error']))
         ) {
             return $jsonResponse['error']['message'];
         } elseif (
@@ -214,8 +220,8 @@ class Proxy
     {
         if (
             array_key_exists('error', $jsonResponse) and (is_array(
-                    $jsonResponse['error']
-                ) and array_key_exists('errors', $jsonResponse['error']))
+                $jsonResponse['error']
+            ) and array_key_exists('errors', $jsonResponse['error']))
         ) {
             return $jsonResponse['error']['errors'];
         } elseif (array_key_exists('trace', $jsonResponse)) {
@@ -390,7 +396,7 @@ class Proxy
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
+        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
         $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
             $pathHaveQueryString = Str::contains($path, '?');
@@ -406,7 +412,7 @@ class Proxy
             );
         }
 
-        return $serviceUrl.$path.$modelId;
+        return $serviceUrl . $path . $modelId;
     }
 
     /**
@@ -472,29 +478,29 @@ class Proxy
      */
     public function setServiceUrl($service, $baseUrl = 'global_app_url'): self
     {
-        $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
+        $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
                 'host address not found in the config file.'
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'];
 
         $port = '';
         if (!empty($parsedUrl['port'])) {
-            $port = ':'.$parsedUrl['port'];
+            $port = ':' . $parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('bsproxy.service_urls.'.$service, null);
+        $path .= config('bsproxy.service_urls.' . $service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service.' service url address not found.'
+                $service . ' service url address not found.'
             );
         }
-        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
+        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
 
         return $this;
     }
@@ -587,6 +593,22 @@ class Proxy
             $this->headers,
             config('bsproxy.global_headers', [])
         );
+    }
+
+    protected function getNumberOfAttempts(): int
+    {
+        return $this->numberOfAttempts;
+    }
+
+    protected function getSleepBetweenAttempts(): int
+    {
+        return ($this->sleepBetweenAttempts > 0) ? $this->sleepBetweenAttempts : 0;
+    }
+
+    public function setRetry(int $attempts, int $sleepInMilliseconds)
+    {
+        $this->numberOfAttempts = $attempts;
+        $this->sleepBetweenAttempts = $sleepInMilliseconds;
     }
 
     /**
@@ -685,5 +707,7 @@ class Proxy
         $this->serviceUrl = null;
         $this->dispatch = false;
         $this->service = null;
+        $this->numberOfAttempts = 1;
+        $this->sleepBetweenAttempts = 0;
     }
 }
