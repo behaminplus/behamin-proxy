@@ -43,13 +43,13 @@ class Proxy
     private $sleepBetweenAttempts = 0;
 
     /**
-     * @param  Request  $request
-     * @param  string  $service
-     * @param ?string  $method
-     * @param ?string  $path
-     * @param ?int  $modelId
-     * @param  array  $data
-     * @param  array  $headers
+     * @param Request $request
+     * @param string $service
+     * @param ?string $method
+     * @param ?string $path
+     * @param ?int $modelId
+     * @param array $data
+     * @param array $headers
      *
      * @return mixed|BSProxyResponse
      * @throws ServiceProxyException|FileNotFoundException
@@ -63,7 +63,8 @@ class Proxy
         ?int $modelId = null,
         array $data = [],
         array $headers = []
-    ) {
+    )
+    {
         $this->setService($service);
 
         if (!empty($headers)) {
@@ -139,7 +140,7 @@ class Proxy
     /**
      * @param $service
      *
-     * 
+     *
      * @throws ServiceProxyException
      */
     public function request($service)
@@ -178,11 +179,8 @@ class Proxy
      */
     private function responseHasError($jsonResponse): bool
     {
-        return is_array($jsonResponse) and (array_key_exists(
-            'error',
-            $jsonResponse
-        ) or
-            array_key_exists('message', $jsonResponse));
+        return is_array($jsonResponse) and
+            (array_key_exists('error', $jsonResponse) or array_key_exists('message', $jsonResponse));
     }
 
     /**
@@ -192,23 +190,18 @@ class Proxy
      */
     private function getResponseMessage($jsonResponse)
     {
-        if (
-            array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('message', $jsonResponse['error']))
-        ) {
+        if (array_key_exists('error', $jsonResponse) and
+            (is_array($jsonResponse['error']) and
+                array_key_exists('message', $jsonResponse['error']))) {
             return $jsonResponse['error']['message'];
-        } elseif (
-            array_key_exists('error', $jsonResponse) and is_string(
-                $jsonResponse['error']
-            )
-        ) {
-            return $jsonResponse['error'];
-        } elseif (array_key_exists('message', $jsonResponse)) {
-            return $jsonResponse['message'];
-        } else {
-            return null;
         }
+        if (array_key_exists('error', $jsonResponse) and is_string($jsonResponse['error'])) {
+            return $jsonResponse['error'];
+        }
+        if (array_key_exists('message', $jsonResponse)) {
+            return $jsonResponse['message'];
+        }
+        return null;
     }
 
     /**
@@ -218,17 +211,14 @@ class Proxy
      */
     private function getResponseError($jsonResponse)
     {
-        if (
-            array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('errors', $jsonResponse['error']))
-        ) {
+        if (array_key_exists('error', $jsonResponse) and
+            (is_array($jsonResponse['error']) and array_key_exists('errors', $jsonResponse['error']))) {
             return $jsonResponse['error']['errors'];
-        } elseif (array_key_exists('trace', $jsonResponse)) {
-            return $jsonResponse['trace'];
-        } else {
-            return null;
         }
+        if (array_key_exists('trace', $jsonResponse)) {
+            return $jsonResponse['trace'];
+        }
+        return null;
     }
 
     /**
@@ -424,8 +414,8 @@ class Proxy
     }
 
     /**
-     * @param  string|array  $service
-     * @param  string  $app
+     * @param string|array $service
+     * @param string $app
      *
      * @return Proxy
      * @throws ServiceProxyException
@@ -471,7 +461,7 @@ class Proxy
 
     /**
      * @param $service
-     * @param  string  $baseUrl
+     * @param string $baseUrl
      *
      * @return self
      * @throws ServiceProxyException
@@ -514,7 +504,7 @@ class Proxy
     }
 
     /**
-     * @param  string  $method
+     * @param string $method
      *
      * @return Proxy
      */
@@ -533,7 +523,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $request
+     * @param null $request
      *
      * @return Proxy
      */
@@ -574,7 +564,7 @@ class Proxy
     }
 
     /**
-     * @param  string  $path
+     * @param string $path
      *
      * @return Proxy
      */
@@ -612,7 +602,7 @@ class Proxy
     }
 
     /**
-     * @param  string[]  $headers
+     * @param string[] $headers
      *
      * @return Proxy
      */
@@ -642,7 +632,7 @@ class Proxy
     }
 
     /**
-     * @param  mixed  $data
+     * @param mixed $data
      *
      * @return Proxy
      */
@@ -669,7 +659,7 @@ class Proxy
     }
 
     /**
-     * @param  null  $token
+     * @param null $token
      *
      * @return mixed|string|null
      */
