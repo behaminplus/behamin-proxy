@@ -228,7 +228,7 @@ class Proxy
      *
      * @return $this
      */
-    public function addFile($name, $file)
+    public function addFile($name, $file): Proxy
     {
         if (!is_array($file) and !($file instanceof UploadedFile)) {
             throw new InvalidArgumentException(
@@ -319,7 +319,7 @@ class Proxy
     /**
      * @return $this
      */
-    public function withProxyResponse()
+    public function withProxyResponse(): Proxy
     {
         $this->withProxyResponse = true;
         return $this;
@@ -375,7 +375,7 @@ class Proxy
     /**
      * @return $this
      */
-    public function setDispatch()
+    public function setDispatch(): Proxy
     {
         $this->dispatch = true;
         return $this;
@@ -446,7 +446,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setModelId($modelId)
+    public function setModelId($modelId): Proxy
     {
         $this->modelId = $modelId;
         return $this;
@@ -464,10 +464,10 @@ class Proxy
      * @param $service
      * @param string $baseUrl
      *
-     * @return self
+     * @return Proxy
      * @throws ServiceProxyException
      */
-    public function setServiceUrl($service, $baseUrl = 'global_app_url'): self
+    public function setServiceUrl($service, $baseUrl = 'global_app_url'): Proxy
     {
         $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
@@ -509,7 +509,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setMethod(string $method)
+    public function setMethod(string $method): Proxy
     {
         $this->method = $method;
         return $this;
@@ -528,7 +528,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setRequest($request)
+    public function setRequest($request): Proxy
     {
         $this->request = $request;
         $this->fetchFromRequest($request);
@@ -569,7 +569,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setPath(string $path)
+    public function setPath(string $path): Proxy
     {
         $this->path = $path;
         return $this;
@@ -607,7 +607,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setHeaders(array $headers)
+    public function setHeaders(array $headers): Proxy
     {
         $this->headers = $headers;
         return $this;
@@ -618,7 +618,7 @@ class Proxy
      *
      * @return $this
      */
-    public function addHeaders(array $headers)
+    public function addHeaders(array $headers): Proxy
     {
         $this->headers = array_merge($this->headers, $headers);
         return $this;
@@ -637,7 +637,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setData($data)
+    public function setData($data): Proxy
     {
         $this->data = $data;
         return $this;
@@ -660,17 +660,17 @@ class Proxy
     }
 
     /**
-     * @param null $token
+     * @param string|null $token
      *
      * @return mixed|string|null
      */
-    public function setToken($token)
+    public function setToken(?string $token): Proxy
     {
         $this->token = $token;
         return $this;
     }
 
-    public function withoutException()
+    public function withoutException(): Proxy
     {
         $this->breakOnError = false;
         return $this;
