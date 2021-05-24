@@ -43,7 +43,7 @@ class Proxy
     private $sleepBetweenAttempts = 0;
 
     /**
-     * @param Request $request
+     * @param Request|null $request
      * @param string $service
      * @param ?string $method
      * @param ?string $path
@@ -52,11 +52,11 @@ class Proxy
      * @param array $headers
      *
      * @return mixed|BSProxyResponse
-     * @throws ServiceProxyException|FileNotFoundException
+     * @throws ServiceProxyException
      * @deprecated
      */
     public function makeRequest(
-        $request,
+        ?Request $request,
         string $service,
         ?string $method = null,
         ?string $path = null,
@@ -141,6 +141,7 @@ class Proxy
      * @param $service
      *
      *
+     * @return BSProxyResponse|mixed
      * @throws ServiceProxyException
      */
     public function request($service)
