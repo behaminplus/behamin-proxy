@@ -43,27 +43,28 @@ class Proxy
     private $sleepBetweenAttempts = 0;
 
     /**
-     * @param  Request  $request
-     * @param  string  $service
-     * @param ?string  $method
-     * @param ?string  $path
-     * @param ?int  $modelId
-     * @param  array  $data
-     * @param  array  $headers
+     * @param Request|null $request
+     * @param string $service
+     * @param ?string $method
+     * @param ?string $path
+     * @param ?int $modelId
+     * @param array $data
+     * @param array $headers
      *
      * @return mixed|BSProxyResponse
-     * @throws ServiceProxyException|FileNotFoundException
+     * @throws ServiceProxyException
      * @deprecated
      */
     public function makeRequest(
-        $request,
+        ?Request $request,
         string $service,
         ?string $method = null,
         ?string $path = null,
         ?int $modelId = null,
         array $data = [],
         array $headers = []
-    ) {
+    )
+    {
         $this->setService($service);
 
         if (!empty($headers)) {
@@ -77,7 +78,7 @@ class Proxy
         }
         if (!empty($method)) {
             $this->setMethod($method);
-        } elseif ($request === null) {
+        } elseif ($request === null and empty($this->getMethod())) {
             $this->setMethod('get');
         }
         if (!empty($data)) {
@@ -139,7 +140,8 @@ class Proxy
     /**
      * @param $service
      *
-     * 
+     *
+     * @return BSProxyResponse|mixed
      * @throws ServiceProxyException
      */
     public function request($service)
@@ -178,11 +180,8 @@ class Proxy
      */
     private function responseHasError($jsonResponse): bool
     {
-        return is_array($jsonResponse) and (array_key_exists(
-            'error',
-            $jsonResponse
-        ) or
-            array_key_exists('message', $jsonResponse));
+        return is_array($jsonResponse) and
+            (array_key_exists('error', $jsonResponse) or array_key_exists('message', $jsonResponse));
     }
 
     /**
@@ -192,23 +191,18 @@ class Proxy
      */
     private function getResponseMessage($jsonResponse)
     {
-        if (
-            array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('message', $jsonResponse['error']))
-        ) {
+        if (array_key_exists('error', $jsonResponse) and
+            (is_array($jsonResponse['error']) and
+                array_key_exists('message', $jsonResponse['error']))) {
             return $jsonResponse['error']['message'];
-        } elseif (
-            array_key_exists('error', $jsonResponse) and is_string(
-                $jsonResponse['error']
-            )
-        ) {
-            return $jsonResponse['error'];
-        } elseif (array_key_exists('message', $jsonResponse)) {
-            return $jsonResponse['message'];
-        } else {
-            return null;
         }
+        if (array_key_exists('error', $jsonResponse) and is_string($jsonResponse['error'])) {
+            return $jsonResponse['error'];
+        }
+        if (array_key_exists('message', $jsonResponse)) {
+            return $jsonResponse['message'];
+        }
+        return null;
     }
 
     /**
@@ -218,17 +212,14 @@ class Proxy
      */
     private function getResponseError($jsonResponse)
     {
-        if (
-            array_key_exists('error', $jsonResponse) and (is_array(
-                $jsonResponse['error']
-            ) and array_key_exists('errors', $jsonResponse['error']))
-        ) {
+        if (array_key_exists('error', $jsonResponse) and
+            (is_array($jsonResponse['error']) and array_key_exists('errors', $jsonResponse['error']))) {
             return $jsonResponse['error']['errors'];
-        } elseif (array_key_exists('trace', $jsonResponse)) {
-            return $jsonResponse['trace'];
-        } else {
-            return null;
         }
+        if (array_key_exists('trace', $jsonResponse)) {
+            return $jsonResponse['trace'];
+        }
+        return null;
     }
 
     /**
@@ -237,7 +228,7 @@ class Proxy
      *
      * @return $this
      */
-    public function addFile($name, $file)
+    public function addFile($name, $file): Proxy
     {
         if (!is_array($file) and !($file instanceof UploadedFile)) {
             throw new InvalidArgumentException(
@@ -328,7 +319,7 @@ class Proxy
     /**
      * @return $this
      */
-    public function withProxyResponse()
+    public function withProxyResponse(): Proxy
     {
         $this->withProxyResponse = true;
         return $this;
@@ -384,7 +375,7 @@ class Proxy
     /**
      * @return $this
      */
-    public function setDispatch()
+    public function setDispatch(): Proxy
     {
         $this->dispatch = true;
         return $this;
@@ -424,8 +415,8 @@ class Proxy
     }
 
     /**
-     * @param  string|array  $service
-     * @param  string  $app
+     * @param string|array $service
+     * @param string $app
      *
      * @return Proxy
      * @throws ServiceProxyException
@@ -455,7 +446,7 @@ class Proxy
      *
      * @return Proxy
      */
-    public function setModelId($modelId)
+    public function setModelId($modelId): Proxy
     {
         $this->modelId = $modelId;
         return $this;
@@ -471,12 +462,12 @@ class Proxy
 
     /**
      * @param $service
-     * @param  string  $baseUrl
+     * @param string $baseUrl
      *
-     * @return self
+     * @return Proxy
      * @throws ServiceProxyException
      */
-    public function setServiceUrl($service, $baseUrl = 'global_app_url'): self
+    public function setServiceUrl($service, $baseUrl = 'global_app_url'): Proxy
     {
         $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
@@ -514,11 +505,11 @@ class Proxy
     }
 
     /**
-     * @param  string  $method
+     * @param string $method
      *
      * @return Proxy
      */
-    public function setMethod(string $method)
+    public function setMethod(string $method): Proxy
     {
         $this->method = $method;
         return $this;
@@ -533,11 +524,11 @@ class Proxy
     }
 
     /**
-     * @param  null  $request
+     * @param null $request
      *
      * @return Proxy
      */
-    public function setRequest($request)
+    public function setRequest($request): Proxy
     {
         $this->request = $request;
         $this->fetchFromRequest($request);
@@ -574,11 +565,11 @@ class Proxy
     }
 
     /**
-     * @param  string  $path
+     * @param string $path
      *
      * @return Proxy
      */
-    public function setPath(string $path)
+    public function setPath(string $path): Proxy
     {
         $this->path = $path;
         return $this;
@@ -612,11 +603,11 @@ class Proxy
     }
 
     /**
-     * @param  string[]  $headers
+     * @param string[] $headers
      *
      * @return Proxy
      */
-    public function setHeaders(array $headers)
+    public function setHeaders(array $headers): Proxy
     {
         $this->headers = $headers;
         return $this;
@@ -627,7 +618,7 @@ class Proxy
      *
      * @return $this
      */
-    public function addHeaders(array $headers)
+    public function addHeaders(array $headers): Proxy
     {
         $this->headers = array_merge($this->headers, $headers);
         return $this;
@@ -642,11 +633,11 @@ class Proxy
     }
 
     /**
-     * @param  mixed  $data
+     * @param mixed $data
      *
      * @return Proxy
      */
-    public function setData($data)
+    public function setData($data): Proxy
     {
         $this->data = $data;
         return $this;
@@ -669,17 +660,17 @@ class Proxy
     }
 
     /**
-     * @param  null  $token
+     * @param string|null $token
      *
      * @return mixed|string|null
      */
-    public function setToken($token)
+    public function setToken(?string $token): Proxy
     {
         $this->token = $token;
         return $this;
     }
 
-    public function withoutException()
+    public function withoutException(): Proxy
     {
         $this->breakOnError = false;
         return $this;
