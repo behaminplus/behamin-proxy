@@ -77,7 +77,7 @@ class Proxy
         }
         if (!empty($method)) {
             $this->setMethod($method);
-        } elseif ($request === null) {
+        } elseif ($request === null and empty($this->getMethod())) {
             $this->setMethod('get');
         }
         if (!empty($data)) {
