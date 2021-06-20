@@ -395,8 +395,7 @@ class Proxy
                 $path .= '/';
             }
         }
-
-        $modelId = trim($modelId = $this->getModelId(), '/');
+        $modelId = trim($this->getModelId(), '/');
         if (!empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
                 "can't set model id when path includes query string."
