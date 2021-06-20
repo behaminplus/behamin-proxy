@@ -84,7 +84,7 @@ class Proxy
         if (!empty($data)) {
             $this->setData($data);
         }
-        if ($request !== null) {
+        if (empty($this->getRequest()) and $request !== null) {
             $this->setRequest($request);
         }
 
@@ -146,7 +146,7 @@ class Proxy
      */
     public function request($service)
     {
-        return $this->makeRequest(null, $service);
+        return $this->makeRequest($this->getRequest(), $service);
     }
 
     /**
@@ -218,6 +218,9 @@ class Proxy
         }
         if (array_key_exists('trace', $jsonResponse)) {
             return $jsonResponse['trace'];
+        }
+        if (array_key_exists('errors', $jsonResponse) and is_array($jsonResponse['errors'])) {
+            return $jsonResponse['errors'];
         }
         return null;
     }
@@ -395,8 +398,7 @@ class Proxy
                 $path .= '/';
             }
         }
-
-        $modelId = trim($modelId = $this->getModelId(), '/');
+        $modelId = trim($this->getModelId(), '/');
         if (!empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
                 "can't set model id when path includes query string."
