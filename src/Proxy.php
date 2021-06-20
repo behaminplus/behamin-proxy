@@ -84,7 +84,7 @@ class Proxy
         if (!empty($data)) {
             $this->setData($data);
         }
-        if ($request !== null) {
+        if (empty($this->getRequest()) and $request !== null) {
             $this->setRequest($request);
         }
 
@@ -146,7 +146,7 @@ class Proxy
      */
     public function request($service)
     {
-        return $this->makeRequest(null, $service);
+        return $this->makeRequest($this->getRequest(), $service);
     }
 
     /**
