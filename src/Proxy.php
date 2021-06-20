@@ -219,6 +219,9 @@ class Proxy
         if (array_key_exists('trace', $jsonResponse)) {
             return $jsonResponse['trace'];
         }
+        if (array_key_exists('errors', $jsonResponse) and is_array($jsonResponse['errors'])) {
+            return $jsonResponse['errors'];
+        }
         return null;
     }
 
