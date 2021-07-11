@@ -3,12 +3,11 @@
 namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Exceptions\ServiceProxyException;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
 
@@ -43,13 +42,13 @@ class Proxy
     private $sleepBetweenAttempts = 0;
 
     /**
-     * @param Request|null $request
-     * @param string $service
-     * @param ?string $method
-     * @param ?string $path
-     * @param ?int $modelId
-     * @param array $data
-     * @param array $headers
+     * @param  Request|null  $request
+     * @param  string  $service
+     * @param ?string  $method
+     * @param ?string  $path
+     * @param ?int  $modelId
+     * @param  array  $data
+     * @param  array  $headers
      *
      * @return mixed|BSProxyResponse
      * @throws ServiceProxyException
@@ -63,8 +62,7 @@ class Proxy
         ?int $modelId = null,
         array $data = [],
         array $headers = []
-    )
-    {
+    ) {
         $this->setService($service);
 
         if (!empty($headers)) {
@@ -390,7 +388,7 @@ class Proxy
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
+        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
         $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
             $pathHaveQueryString = Str::contains($path, '?');
@@ -405,7 +403,7 @@ class Proxy
             );
         }
 
-        return $serviceUrl . $path . $modelId;
+        return $serviceUrl.$path.$modelId;
     }
 
     /**
@@ -417,8 +415,8 @@ class Proxy
     }
 
     /**
-     * @param string|array $service
-     * @param string $app
+     * @param  string|array  $service
+     * @param  string  $app
      *
      * @return Proxy
      * @throws ServiceProxyException
@@ -464,36 +462,36 @@ class Proxy
 
     /**
      * @param $service
-     * @param string $baseUrl
+     * @param  string  $baseUrl
      *
      * @return Proxy
      * @throws ServiceProxyException
      */
     public function setServiceUrl($service, $baseUrl = 'global_app_url'): Proxy
     {
-        $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
+        $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
                 'host address not found in the config file.'
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
 
         $port = '';
         if (!empty($parsedUrl['port'])) {
-            $port = ':' . $parsedUrl['port'];
+            $port = ':'.$parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('bsproxy.service_urls.' . $service, null);
+        $path .= config('bsproxy.service_urls.'.$service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service . ' service url address not found.'
+                $service.' service url address not found.'
             );
         }
-        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
 
         return $this;
     }
@@ -507,7 +505,7 @@ class Proxy
     }
 
     /**
-     * @param string $method
+     * @param  string  $method
      *
      * @return Proxy
      */
@@ -526,7 +524,7 @@ class Proxy
     }
 
     /**
-     * @param null $request
+     * @param  null  $request
      *
      * @return Proxy
      */
@@ -567,7 +565,7 @@ class Proxy
     }
 
     /**
-     * @param string $path
+     * @param  string  $path
      *
      * @return Proxy
      */
@@ -602,10 +600,11 @@ class Proxy
     {
         $this->numberOfAttempts = $attempts;
         $this->sleepBetweenAttempts = $sleepInMilliseconds;
+        return $this;
     }
 
     /**
-     * @param string[] $headers
+     * @param  string[]  $headers
      *
      * @return Proxy
      */
@@ -635,7 +634,7 @@ class Proxy
     }
 
     /**
-     * @param mixed $data
+     * @param  mixed  $data
      *
      * @return Proxy
      */
@@ -662,7 +661,7 @@ class Proxy
     }
 
     /**
-     * @param string|null $token
+     * @param  string|null  $token
      *
      * @return mixed|string|null
      */

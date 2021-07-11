@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Proxy setToken($token)
  * @method static Proxy setPath(string $path)
  * @method static Proxy setRequest($request)
+ * @method static setRetry(int $attempts, int $sleepInMilliseconds)
  * @method static Proxy setMethod(string $method)
  * @method static Proxy setModelId(?int $modelId)
  * @method static mixed|BSProxyResponse dispatch($serviceName)
