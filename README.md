@@ -9,7 +9,7 @@ composer require behamin/service-proxy
 ```
 ### Publish config
 ```
-php artisan vendor:publish --provider="BSProxy\BSProxyServiceProvider" --tag config
+php artisan vendor:publish --provider="Behamin\ServiceProxy\BSProxyServiceProvider" --tag config
 ```
 ### Add services
 Add your services in `proxy-services-url.php` config
