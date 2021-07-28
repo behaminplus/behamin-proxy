@@ -2,6 +2,6 @@
 
 namespace Behamin\ServiceProxy\Tests;
 
-class TestCase
+class TestCase extends \Orchestra\Testbench\TestCase
 {
 }

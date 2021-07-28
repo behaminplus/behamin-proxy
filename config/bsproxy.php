@@ -6,10 +6,7 @@ return [
     * Services List and Their URLs
     */
     'service_urls' => [
-        // 'USER'      => "user-service",
-        // 'PRODUCT'   => "product-service",
-        // 'TICKET'    => "ticket-service",
-        // 'SMS'       => "sms-service"
+        // 'BEHYAR'      => "behyar-service",
     ],
 
     /*
@@ -19,5 +16,5 @@ return [
         'Accept' => 'application/json'
     ],
 
-    'global_app_url' => env('GLOBAL_APP_URL', env('APP_URL', null)),
+    'global_app_url' => env('GLOBAL_APP_URL', env('APP_URL')),
 ];

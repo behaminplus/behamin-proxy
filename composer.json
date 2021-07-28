@@ -12,8 +12,13 @@
     ],
     "type": "library",
     "require": {
-        "php": "^7.3|^8.0",
-        "laravel/framework": "^7.0|^8.0"
+        "php": "^7.4|^8.0",
+        "laravel/framework": "^7.0|^8.0",
+        "guzzlehttp/guzzle": "7.4.x-dev",
+        "spatie/data-transfer-object": "v2.x-dev"
+    },
+    "require-dev": {
+        "orchestra/testbench": "6.x-dev"
     },
     "license": "MIT",
     "authors": [
@@ -38,13 +43,13 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Behamin\\ServiceProxy\\Tests": "tests/"
+            "Behamin\\ServiceProxy\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Behamin\\ServiceProxy\\BSProxyServiceProvider"
+                "ProxyServiceProvider"
             ],
             "aliases": {
                 "BSProxy": "Behamin\\ServiceProxy\\Proxy"

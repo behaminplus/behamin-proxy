@@ -4,6 +4,7 @@ namespace Behamin\ServiceProxy\Exceptions;
 
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class ServiceProxyException extends Exception
 {
@@ -13,7 +14,7 @@ class ServiceProxyException extends Exception
 
     public function __construct(
         $message,
-        $code = 400,
+        $code = Response::HTTP_UNPROCESSABLE_ENTITY,
         array $errors = null
     ) {
         parent::__construct($message, $code);
@@ -22,7 +23,7 @@ class ServiceProxyException extends Exception
         $this->message = $message;
     }
 
-    public function render(Request $request)
+    public function render(Request $request): \Illuminate\Http\JsonResponse
     {
         return response()->json([
             'data' => null,
