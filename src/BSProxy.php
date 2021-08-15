@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string getServiceRequestUrl()
  * @method static Proxy withoutException()
  * @method static Proxy withProxyResponse()
+ * @method static Proxy setTimeout(int $timeout)
  */
 class BSProxy extends Facade
 {
