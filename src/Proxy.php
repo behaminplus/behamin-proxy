@@ -26,6 +26,17 @@ class Proxy
     /**
      * @var
      */
+    private $timeout = 60;
+
+    /**
+     * @param  mixed  $timeout
+     */
+    public function setTimeout(int $timeout): self
+    {
+        $this->timeout = $timeout;
+        return $this;
+    }
+
     private $method;
     private $headers = [];
     private $path = null;
@@ -65,7 +76,7 @@ class Proxy
     ) {
         $this->setService($service);
 
-        if (!empty($headers)) {
+        if ( ! empty($headers)) {
             $this->addHeaders($headers);
         }
         if ($path !== null) {
@@ -74,12 +85,12 @@ class Proxy
         if ($modelId !== null) {
             $this->setModelId($modelId);
         }
-        if (!empty($method)) {
+        if ( ! empty($method)) {
             $this->setMethod($method);
         } elseif ($request === null and empty($this->getMethod())) {
             $this->setMethod('get');
         }
-        if (!empty($data)) {
+        if ( ! empty($data)) {
             $this->setData($data);
         }
         if (empty($this->getRequest()) and $request !== null) {
@@ -87,7 +98,8 @@ class Proxy
         }
 
         $headers = $this->getHeaders();
-        $response = Http::withHeaders($headers);
+        $response = Http::withHeaders($headers)
+            ->timeout($this->timeout);
         $numberOfAttempts = $this->getNumberOfAttempts();
         if ($numberOfAttempts > 1) {
             $response = $response->retry($numberOfAttempts, $this->getSleepBetweenAttempts());
@@ -231,7 +243,7 @@ class Proxy
      */
     public function addFile($name, $file): Proxy
     {
-        if (!is_array($file) and !($file instanceof UploadedFile)) {
+        if ( ! is_array($file) and ! ($file instanceof UploadedFile)) {
             throw new InvalidArgumentException(
                 'An uploaded file must be an array or an instance of UploadedFile.'
             );
@@ -264,7 +276,7 @@ class Proxy
      */
     private function getFileOriginalName($nameInRequest)
     {
-        if (!empty($this->files[$nameInRequest])) {
+        if ( ! empty($this->files[$nameInRequest])) {
             return $nameInRequest;
         }
 
@@ -392,12 +404,12 @@ class Proxy
         $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
             $pathHaveQueryString = Str::contains($path, '?');
-            if (!$pathHaveQueryString) {
+            if ( ! $pathHaveQueryString) {
                 $path .= '/';
             }
         }
         $modelId = trim($this->getModelId(), '/');
-        if (!empty($modelId) && $pathHaveQueryString) {
+        if ( ! empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
                 "can't set model id when path includes query string."
             );
@@ -480,7 +492,7 @@ class Proxy
         $host = $parsedUrl['host'];
 
         $port = '';
-        if (!empty($parsedUrl['port'])) {
+        if ( ! empty($parsedUrl['port'])) {
             $port = ':'.$parsedUrl['port'];
         }
 
@@ -550,7 +562,7 @@ class Proxy
             if (empty($this->getData())) {
                 $this->setData($request->all());
             }
-            if (!empty($token = $this->request->bearerToken())) {
+            if ( ! empty($token = $this->request->bearerToken())) {
                 $this->token = $token;
             }
         }
