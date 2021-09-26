@@ -8,8 +8,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\FileBag;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * Class Proxy
@@ -76,7 +76,7 @@ class Proxy
     ) {
         $this->setService($service);
 
-        if ( ! empty($headers)) {
+        if (!empty($headers)) {
             $this->addHeaders($headers);
         }
         if ($path !== null) {
@@ -85,12 +85,12 @@ class Proxy
         if ($modelId !== null) {
             $this->setModelId($modelId);
         }
-        if ( ! empty($method)) {
+        if (!empty($method)) {
             $this->setMethod($method);
         } elseif ($request === null and empty($this->getMethod())) {
             $this->setMethod('get');
         }
-        if ( ! empty($data)) {
+        if (!empty($data)) {
             $this->setData($data);
         }
         if (empty($this->getRequest()) and $request !== null) {
@@ -176,6 +176,8 @@ class Proxy
             if ($this->breakOnError()) {
                 throw new ServiceProxyException(
                     $errorMessage,
+                    $this->getServiceRequestUrl(),
+                    $this->getService(),
                     $response->status(),
                     $errors
                 );
@@ -243,7 +245,7 @@ class Proxy
      */
     public function addFile($name, $file): Proxy
     {
-        if ( ! is_array($file) and ! ($file instanceof UploadedFile)) {
+        if (!is_array($file) and !($file instanceof UploadedFile)) {
             throw new InvalidArgumentException(
                 'An uploaded file must be an array or an instance of UploadedFile.'
             );
@@ -255,7 +257,7 @@ class Proxy
         }
 
         $fileData = Arr::only($file, ['tmp_name', 'name', 'type', 'error']);
-        if (count($fileData) <> 4) {
+        if (count($fileData) != 4) {
             throw new InvalidArgumentException(
                 'An uploaded file must be an array with tmp_name, name, type, error data  or an instance of UploadedFile.'
             );
@@ -276,7 +278,7 @@ class Proxy
      */
     private function getFileOriginalName($nameInRequest)
     {
-        if ( ! empty($this->files[$nameInRequest])) {
+        if (!empty($this->files[$nameInRequest])) {
             return $nameInRequest;
         }
 
@@ -315,7 +317,6 @@ class Proxy
         }
         return false;
     }
-
 
     /**
      * @param $response
@@ -400,22 +401,24 @@ class Proxy
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
+        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
         $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
             $pathHaveQueryString = Str::contains($path, '?');
-            if ( ! $pathHaveQueryString) {
+            if (!$pathHaveQueryString) {
                 $path .= '/';
             }
         }
         $modelId = trim($this->getModelId(), '/');
-        if ( ! empty($modelId) && $pathHaveQueryString) {
+        if (!empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
-                "can't set model id when path includes query string."
+                "can't set model id when path includes query string.",
+                $this->getServiceRequestUrl(),
+                $this->getService()
             );
         }
 
-        return $serviceUrl.$path.$modelId;
+        return $serviceUrl . $path . $modelId;
     }
 
     /**
@@ -481,29 +484,33 @@ class Proxy
      */
     public function setServiceUrl($service, $baseUrl = 'global_app_url'): Proxy
     {
-        $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
+        $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
-                'host address not found in the config file.'
+                'host address not found in the config file.',
+                null,
+                $this->getService()
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
         $host = $parsedUrl['host'];
 
         $port = '';
-        if ( ! empty($parsedUrl['port'])) {
-            $port = ':'.$parsedUrl['port'];
+        if (!empty($parsedUrl['port'])) {
+            $port = ':' . $parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('bsproxy.service_urls.'.$service, null);
+        $path .= config('bsproxy.service_urls.' . $service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service.' service url address not found.'
+                $service . ' service url address not found.',
+                null,
+                $this->getService()
             );
         }
-        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
+        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
 
         return $this;
     }
@@ -562,7 +569,7 @@ class Proxy
             if (empty($this->getData())) {
                 $this->setData($request->all());
             }
-            if ( ! empty($token = $this->request->bearerToken())) {
+            if (!empty($token = $this->request->bearerToken())) {
                 $this->token = $token;
             }
         }
