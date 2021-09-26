@@ -176,6 +176,8 @@ class Proxy
             if ($this->breakOnError()) {
                 throw new ServiceProxyException(
                     $errorMessage,
+                    $this->getServiceRequestUrl(),
+                    $this->getService(),
                     $response->status(),
                     $errors
                 );
@@ -411,7 +413,9 @@ class Proxy
         $modelId = trim($this->getModelId(), '/');
         if ( ! empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
-                "can't set model id when path includes query string."
+                "can't set model id when path includes query string.",
+                'service Url. '.$this->getServiceRequestUrl(),
+                'service name. '.$this->getService()
             );
         }
 
@@ -484,7 +488,9 @@ class Proxy
         $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
-                'host address not found in the config file.'
+                'host address not found in the config file.',
+                null,
+                'service name . '.$this->getService()
             );
         }
 
@@ -500,7 +506,9 @@ class Proxy
         $path .= config('bsproxy.service_urls.'.$service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service.' service url address not found.'
+                $service.' service url address not found.',
+                null,
+                'service name . '.$this->getService()
             );
         }
         $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';

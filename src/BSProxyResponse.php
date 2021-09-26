@@ -31,7 +31,7 @@ class BSProxyResponse implements \ArrayAccess, Responsable
     {
         $this->response = $response;
         if ($response instanceof Response) {
-            $this->body = (string)$response->getBody();
+            $this->body = (string) $response->getBody();
         } else {
             $this->body = $response->getContent();
         }
@@ -54,7 +54,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
             if ($this->retException) {
                 throw new ServiceProxyException(
                     'data object not exists from ' .
-                        (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
+                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
+                    ' request from. ' . $this->proxy->getServiceRequestUrl(),
+                    ' service name. ' . $this->proxy->getService()
                 );
             }
             return null;
@@ -67,7 +69,8 @@ class BSProxyResponse implements \ArrayAccess, Responsable
     }
 
     // Determine if the status code is >= 200 and < 300...
-    function successful(){
+    public function successful()
+    {
         $statusCode = $this->response->getStatusCode();
         if (empty($this->successStatusCode)) {
             return ($statusCode >= 200 && $statusCode < 300);
@@ -76,8 +79,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
     }
 
     // Determine if the status code is >= 400...
-    public function failed(){
-        if ($this->successful()){
+    public function failed()
+    {
+        if ($this->successful()) {
             return false;
         }
         return $this->response->getStatusCode() >= 400;
@@ -95,7 +99,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         }
 
         throw new ServiceProxyException(
-    'request from ' . $this->getProxy()->getService() . ' service failed.' . ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
+            ' service failed. ' . ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
+            ' request from. ' . $this->proxy->getServiceRequestUrl(),
+            ' service name. ' . $this->proxy->getService(),
             $this->getStatusCode(),
             $exceptionStack
         );
@@ -113,10 +119,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         return $this;
     }
 
-
     public function hasError($key = null)
     {
-        if (empty($this->bodyJson->error) || ! $this->bodyJson->error) {
+        if (empty($this->bodyJson->error) || !$this->bodyJson->error) {
             return false;
         }
 
@@ -144,7 +149,7 @@ class BSProxyResponse implements \ArrayAccess, Responsable
 
     public function getArrayErrors()
     {
-        return (array)$this->getErrors();
+        return (array) $this->getErrors();
     }
 
     public function getItems()
@@ -155,14 +160,16 @@ class BSProxyResponse implements \ArrayAccess, Responsable
             if ($this->retException) {
                 throw new ServiceProxyException(
                     'data->items object not exists from ' .
-                        (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000)
+                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
+                    ' request from. ' . $this->proxy->getServiceRequestUrl(),
+                    ' service name. '.$this->proxy->getService()
                 );
             }
             return null;
         }
     }
 
-    public function  getBody()
+    public function getBody()
     {
         return $this->body;
     }
@@ -188,36 +195,37 @@ class BSProxyResponse implements \ArrayAccess, Responsable
             $info['response'] = json_decode($this->getBody());
         }
 
-        if (! empty($info['response']->trace) && is_array($info['response']->trace)){
+        if (!empty($info['response']->trace) && is_array($info['response']->trace)) {
             $info['response']->trace = array_slice($info['response']->trace, 0, 5);
         }
 
         return $info;
     }
 
-    public function hasItem($offset = null) {
+    public function hasItem($offset = null)
+    {
         if ($offset === null) {
             return isset($this->bodyJson->data, $this->bodyJson->data->item);
         } else {
-            if (! $this->hasItems()){
+            if (!$this->hasItems()) {
                 return false;
             }
             $items = $this->getItems();
-            if (is_array($items) && isset($items[$offset])){
+            if (is_array($items) && isset($items[$offset])) {
                 return true;
             }
             return false;
         }
     }
 
-    public function hasItems(){
+    public function hasItems()
+    {
         return isset($this->bodyJson->data, $this->bodyJson->data->items);
     }
 
-
     public function toJson($options = 0, $items = false)
     {
-        if ($items && $this->hasItems()){
+        if ($items && $this->hasItems()) {
             return json_encode($this->getItems(), $options);
         }
         if ($items && $this->hasItem()) {
@@ -227,22 +235,20 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         return $this->response->body();
     }
 
-
-    public function toResponse($request){
+    public function toResponse($request)
+    {
 
         return \response()->json($this->bodyJson)->setStatusCode($this->getStatusCode());
     }
-
 
     public function offsetExists($offset)
     {
         return $this->hasItem($offset);
     }
 
-
     public function offsetGet($offset)
     {
-        if ($this->offsetExists($offset)){
+        if ($this->offsetExists($offset)) {
             return $this->getItems()[$offset];
         }
         return null;
