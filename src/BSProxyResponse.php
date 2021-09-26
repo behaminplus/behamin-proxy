@@ -161,7 +161,7 @@ class BSProxyResponse implements \ArrayAccess, Responsable
                 throw new ServiceProxyException(
                     'data->items object not exists from ' .
                     (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
-                    ' request from. ' . $this->proxy->getServiceRequestUrl(),
+                    ' request from. ' . $this->proxy->getServiceUrl(),
                     ' service name. '.$this->proxy->getService()
                 );
             }

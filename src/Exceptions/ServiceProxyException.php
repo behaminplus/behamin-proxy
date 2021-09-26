@@ -15,17 +15,25 @@ class ServiceProxyException extends Exception
 
     public function __construct(
         $message,
-        $url =null,
+        $url = null,
         $service,
         $code = 400,
         array $errors = null
     ) {
-        parent::__construct($message, $url, $service, $code);
+        parent::__construct($message, $code);
         $this->errors = $errors;
         $this->message = $message;
         $this->url = $url;
         $this->service = $service;
         $this->code = $code;
+    }
+
+    public function context()
+    {
+        return [
+            'url' => $this->url,
+            'serrvice name' => $this->service,
+        ];
     }
 
     public function render(Request $request)
@@ -35,8 +43,6 @@ class ServiceProxyException extends Exception
             'message' => null,
             'error' => [
                 'message' => $this->message,
-                'url' => $this->url,
-                'service' => $this->service,
                 'errors' => $this->errors,
             ],
         ], $this->code);
