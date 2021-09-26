@@ -55,8 +55,8 @@ class BSProxyResponse implements \ArrayAccess, Responsable
                 throw new ServiceProxyException(
                     'data object not exists from ' .
                     (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
-                    ' request from. ' . $this->proxy->getServiceRequestUrl(),
-                    ' service name. ' . $this->proxy->getService()
+                    $this->proxy->getServiceRequestUrl(),
+                    $this->proxy->getService()
                 );
             }
             return null;
@@ -99,9 +99,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         }
 
         throw new ServiceProxyException(
-            ' service failed. ' . ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
-            ' request from. ' . $this->proxy->getServiceRequestUrl(),
-            ' service name. ' . $this->proxy->getService(),
+            ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
+            $this->proxy->getServiceRequestUrl(),
+            $this->proxy->getService(),
             $this->getStatusCode(),
             $exceptionStack
         );
@@ -161,8 +161,8 @@ class BSProxyResponse implements \ArrayAccess, Responsable
                 throw new ServiceProxyException(
                     'data->items object not exists from ' .
                     (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
-                    ' request from. ' . $this->proxy->getServiceUrl(),
-                    ' service name. '.$this->proxy->getService()
+                    $this->proxy->getServiceUrl(),
+                    $this->proxy->getService()
                 );
             }
             return null;

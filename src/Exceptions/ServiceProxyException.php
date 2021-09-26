@@ -31,9 +31,12 @@ class ServiceProxyException extends Exception
     public function context()
     {
         return [
-            'url' => $this->url,
-            'serrvice name' => $this->service,
+            'message. ' => $this->message,
+            'request from. ' => $this->url,
+            'service name. ' => $this->service,
+            'code. ' =>$this->code,
         ];
+        
     }
 
     public function render(Request $request)
