@@ -53,10 +53,10 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         } else {
             if ($this->retException) {
                 throw new ServiceProxyException(
-                    'data object not exists from ' .
-                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
-                    $this->proxy->getServiceRequestUrl(),
-                    $this->proxy->getService()
+                    'data object not exists from '.
+                    (strtolower($this->proxy->getService()))."\n".substr($this->body, 0, 1000),
+                    $this->proxy->getService(),
+                    $this->proxy->getServiceRequestUrl()
                 );
             }
             return null;
@@ -87,8 +87,9 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         return $this->response->getStatusCode() >= 400;
     }
 
-    public function withException($exceptionStack = ['proxy' => 'request failed, please check errors if exists or proxy info.'])
-    {
+    public function withException(
+        $exceptionStack = ['proxy' => 'request failed, please check errors if exists or proxy info.']
+    ) {
         if ($this->successful()) {
             return $this;
         }
@@ -100,8 +101,8 @@ class BSProxyResponse implements \ArrayAccess, Responsable
 
         throw new ServiceProxyException(
             ($this->hasError() ? implode(', ', $this->getErrors()) : ''),
-            $this->proxy->getServiceRequestUrl(),
             $this->proxy->getService(),
+            $this->proxy->getServiceRequestUrl(),
             $this->getStatusCode(),
             $exceptionStack
         );
@@ -159,10 +160,10 @@ class BSProxyResponse implements \ArrayAccess, Responsable
         } else {
             if ($this->retException) {
                 throw new ServiceProxyException(
-                    'data->items object not exists from ' .
-                    (strtolower($this->proxy->getService())) . "\n" . substr($this->body, 0, 1000),
-                    $this->proxy->getServiceUrl(),
-                    $this->proxy->getService()
+                    'data->items object not exists from '.
+                    (strtolower($this->proxy->getService()))."\n".substr($this->body, 0, 1000),
+                    $this->proxy->getService(),
+                    $this->proxy->getServiceUrl()
                 );
             }
             return null;

@@ -176,8 +176,8 @@ class Proxy
             if ($this->breakOnError()) {
                 throw new ServiceProxyException(
                     $errorMessage,
-                    $this->getServiceRequestUrl(),
                     $this->getService(),
+                    $this->getServiceRequestUrl(),
                     $response->status(),
                     $errors
                 );
@@ -401,7 +401,7 @@ class Proxy
      */
     public function getServiceRequestUrl()
     {
-        $serviceUrl = trim($this->getServiceUrl(), '/') . '/';
+        $serviceUrl = trim($this->getServiceUrl(), '/').'/';
         $pathHaveQueryString = false;
         if ($path = trim($this->getPath(), '/')) {
             $pathHaveQueryString = Str::contains($path, '?');
@@ -413,12 +413,12 @@ class Proxy
         if (!empty($modelId) && $pathHaveQueryString) {
             throw new ServiceProxyException(
                 "can't set model id when path includes query string.",
-                $this->getServiceRequestUrl(),
-                $this->getService()
+                $this->getService(),
+                $this->getServiceRequestUrl()
             );
         }
 
-        return $serviceUrl . $path . $modelId;
+        return $serviceUrl.$path.$modelId;
     }
 
     /**
@@ -484,33 +484,31 @@ class Proxy
      */
     public function setServiceUrl($service, $baseUrl = 'global_app_url'): Proxy
     {
-        $parsedUrl = parse_url(config('bsproxy.' . $baseUrl));
+        $parsedUrl = parse_url(config('bsproxy.'.$baseUrl));
         if (empty($parsedUrl['host'])) {
             throw new ServiceProxyException(
                 'host address not found in the config file.',
-                null,
                 $this->getService()
             );
         }
 
-        $scheme = ($parsedUrl['scheme'] ?? 'https') . '://';
+        $scheme = ($parsedUrl['scheme'] ?? 'https').'://';
         $host = $parsedUrl['host'];
 
         $port = '';
         if (!empty($parsedUrl['port'])) {
-            $port = ':' . $parsedUrl['port'];
+            $port = ':'.$parsedUrl['port'];
         }
 
         $path = $parsedUrl['path'] ?? '';
-        $path .= config('bsproxy.service_urls.' . $service, null);
+        $path .= config('bsproxy.service_urls.'.$service, null);
         if (empty($path)) {
             throw new ServiceProxyException(
-                $service . ' service url address not found.',
-                null,
+                $service.' service url address not found.',
                 $this->getService()
             );
         }
-        $this->serviceUrl = ($scheme . $host . $port) . '/' . trim($path, '/') . '/';
+        $this->serviceUrl = ($scheme.$host.$port).'/'.trim($path, '/').'/';
 
         return $this;
     }

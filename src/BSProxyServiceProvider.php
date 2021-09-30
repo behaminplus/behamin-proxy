@@ -10,7 +10,7 @@ class BSProxyServiceProvider extends ServiceProvider
     {
         parent::register();
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/bsproxy.php',
+            __DIR__.'/../config/bsproxy.php',
             'bsproxy'
         );
     }
@@ -20,7 +20,7 @@ class BSProxyServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes(
                 [
-                    __DIR__ . '/../config/bsproxy.php' => config_path(
+                    __DIR__.'/../config/bsproxy.php' => config_path(
                         'bsproxy.php'
                     )
                 ],

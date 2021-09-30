@@ -15,8 +15,8 @@ class ServiceProxyException extends Exception
 
     public function __construct(
         $message,
-        $url = null,
         $service,
+        $url = null,
         $code = 400,
         array $errors = null
     ) {
@@ -34,9 +34,9 @@ class ServiceProxyException extends Exception
             'message. ' => $this->message,
             'request from. ' => $this->url,
             'service name. ' => $this->service,
-            'code. ' =>$this->code,
+            'code. ' => $this->code,
         ];
-        
+
     }
 
     public function render(Request $request)
