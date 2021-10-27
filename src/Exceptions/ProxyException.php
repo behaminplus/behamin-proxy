@@ -27,4 +27,16 @@ class ProxyException extends HttpClientException
 
         return is_null($summary) ? $message : $message.":\n$summary\n";
     }
+
+    /**
+     * Get the default context variables for logging.
+     *
+     * @return array
+     */
+    protected function context(): array
+    {
+        return [
+            'proxy_path' => $this->responseWrapper->getRequestInfo()->getPath(),
+        ];
+    }
 }
