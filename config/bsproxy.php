@@ -2,19 +2,12 @@
 
 return [
 
-    /*
-    * Services List and Their URLs
-    */
-    'service_urls' => [
-        // 'BEHYAR'      => "behyar-service",
-    ],
-
-    /*
-    * Headers added to every request
-    */
+    /**
+     * Headers added to every request
+     */
     'global_headers' => [
         'Accept' => 'application/json'
     ],
 
-    'global_app_url' => env('GLOBAL_APP_URL', env('APP_URL')),
+    'proxy_base_url' => env('PROXY_BASE__URL', env('APP_URL')),
 ];

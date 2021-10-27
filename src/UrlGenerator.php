@@ -4,14 +4,14 @@
 namespace Behamin\ServiceProxy;
 
 
-use Behamin\ServiceProxy\Exceptions\ServiceProxyException;
+use http\Exception\InvalidArgumentException;
+use PharIo\Manifest\InvalidUrlException;
 
 class UrlGenerator
 {
 
     /**
      * @return string
-     * @throws \Exception
      */
     public static function baseUrl(): string
     {
@@ -20,42 +20,25 @@ class UrlGenerator
 
     /**
      * @param $url
-     * @throws \Exception
      */
     private static function checkIfUrlIsValid($url)
     {
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new ServiceProxyException("Url isn't set in bsproxy config file");
+            throw new InvalidArgumentException("Url isn't set in bsproxy config file");
         }
     }
 
     /**
      * @return string
-     * @throws \Exception
      */
     private static function getConfigBaseUrl(): string
     {
         // TODO check if url is a valid url
-        $url = config('bsproxy.global_app_url', 'https://debug.behaminplus.ir/');
+        $url = config('bsproxy.proxy_base_url');
         if ($url == null) {
-            throw new ServiceProxyException("Url isn't set in bsproxy config file");
+            throw new InvalidUrlException("Url isn't set in bsproxy config file");
         }
         self::checkIfUrlIsValid($url);
         return $url;
-    }
-
-    /**
-     * @return \Illuminate\Config\Repository|\Illuminate\Contracts\Foundation\Application|mixed
-     * @throws \Exception
-     */
-    public static function getConfigServicePath($service)
-    {
-        $servicePath = config('bsproxy.service_urls.'.$service, 'behyar-service');
-        if (empty($service)) {
-            throw new ServiceProxyException(
-                $servicePath.' service url address not found.'
-            );
-        }
-        return $servicePath;
     }
 }

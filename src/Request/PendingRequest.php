@@ -4,7 +4,9 @@
 namespace Behamin\ServiceProxy\Request;
 
 
+use Behamin\ServiceProxy\Response\ResponseWrapper;
 use Behamin\ServiceProxy\UrlGenerator;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Support\Str;
 
 class PendingRequest extends \Illuminate\Http\Client\PendingRequest
@@ -24,61 +26,64 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     public function get(string $url = null, $query = null)
     {
         $this->prepare();
-        return parent::get($this->fullUrl($url), $query);
+        $result = parent::get($this->fullUrl($url), $query);
+        return $this->respond($result);
     }
 
-    public function delete($url = null, $data = [])
+    public function delete($url = null, $data = []): ResponseWrapper
     {
         $this->prepare();
-        return parent::delete($this->fullUrl($url), $data);
+        $result = parent::delete($this->fullUrl($url), $data);
+        return $this->respond($result);
     }
 
     public function head(string $url = null, $query = null)
     {
         $this->prepare();
-        return parent::head($this->fullUrl($url), $query);
+        $result = parent::head($this->fullUrl($url), $query);
+        return $this->respond($result);
     }
 
-    public function patch($url, $data = [])
+    public function patch($url, $data = []): ResponseWrapper
     {
         $this->prepare();
-        return parent::patch($this->fullUrl($url), $data);
+        $result = parent::patch($this->fullUrl($url), $data);
+        return $this->respond($result);
     }
 
-    public function post(string $url, array $data = [])
+    public function post(string $url, array $data = []): ResponseWrapper
     {
         $this->prepare();
-        return parent::post($this->fullUrl($url), $data);
+        $result = parent::post($this->fullUrl($url), $data);
+        return $this->respond($result);
     }
 
-    public function put($url, $data = [])
+    public function put($url, $data = []): ResponseWrapper
     {
         $this->prepare();
-        return parent::put($this->fullUrl($url), $data);
+        $result = parent::put($this->fullUrl($url), $data);
+        return $this->respond($result);
     }
 
 
     private function prepare()
     {
         $this->withHeaders(array_merge(
-            $this->requestInfo->getHeaders(),
-            config('bsproxy.global_headers', [])
+            config('bsproxy.proxy_base_url', []),
+            $this->requestInfo->getHeaders()
         ));
         $this->withOptions($this->requestInfo->getOptions());
     }
 
     /**
      * @param  null  $path
-     * @param  null  $baseUrl
      * @return string
-     * @throws \Exception
      */
-    private function fullUrl($path = null, $baseUrl = null): string
+    private function fullUrl($path = null): string
     {
-        if ($baseUrl == null) {
-            $baseUrl = UrlGenerator::baseUrl();
-        }
-        $servicePath = UrlGenerator::getConfigServicePath($this->requestInfo->getService());
+        $baseUrl = UrlGenerator::baseUrl();
+        $servicePath = $this->requestInfo->getService();
+
         if (Str::endsWith($baseUrl, '/')) {
             $baseUrl = Str::substr($baseUrl, 0, -1);
         }
@@ -104,4 +109,11 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         return $baseUrl.'/'.$servicePath.'/'.$finalPath;
     }
 
+    private function respond($result)
+    {
+        if ($result instanceof PromiseInterface) {
+            return $result;
+        }
+        return new ResponseWrapper($result, $this->requestInfo);
+    }
 }

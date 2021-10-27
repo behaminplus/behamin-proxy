@@ -14,11 +14,11 @@
     "require": {
         "php": "^7.4|^8.0",
         "laravel/framework": "^7.0|^8.0",
-        "guzzlehttp/guzzle": "7.4.x-dev",
-        "spatie/data-transfer-object": "v2.x-dev"
+        "guzzlehttp/guzzle": "^7.0",
+        "spatie/data-transfer-object": "v2.0"
     },
     "require-dev": {
-        "orchestra/testbench": "6.x-dev"
+        "orchestra/testbench": "^6.0"
     },
     "license": "MIT",
     "authors": [
@@ -33,9 +33,14 @@
         {
             "name": "Hebrahimzadeh",
             "email": "abi.hossein@gmail.com"
+        },
+        {
+            "name": "Mohammad Hosein Abedini",
+            "email": "mohammadhoseinabedini@gmail.com"
         }
     ],
     "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Behamin\\ServiceProxy\\": "src/"

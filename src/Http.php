@@ -6,20 +6,50 @@ namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Request\PendingRequest;
 use Behamin\ServiceProxy\Request\RequestInfo;
+use Behamin\ServiceProxy\Response\ResponseWrapper;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 /**
  * Class Http
  * @package Behamin\ServiceProxy
  *
- * @method \Illuminate\Http\Client\Response delete(string $url = null, array $data = [])
- * @method \Illuminate\Http\Client\Response get(string $url = null, array|string|null $query = null)
- * @method \Illuminate\Http\Client\Response head(string $url = null, array|string|null $query = null)
- * @method \Illuminate\Http\Client\Response patch(string $url = null, array $data = [])
- * @method \Illuminate\Http\Client\Response post(string $url = null, array $data = [])
- * @method \Illuminate\Http\Client\Response put(string $url = null, array $data = [])
- * @method \Illuminate\Http\Client\Response send(string $method, string $url, array $options = [])
+ * @method \Behamin\ServiceProxy\Request\PendingRequest accept(string $contentType)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest acceptJson()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest asForm()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest asJson()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest asMultipart()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest async()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest attach(string|array $name, string $contents = '', string|null $filename = null, array $headers = [])
+ * @method \Behamin\ServiceProxy\Request\PendingRequest baseUrl(string $url)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest beforeSending(callable $callback)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest bodyFormat(string $format)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest contentType(string $contentType)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest dd()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest dump()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest retry(int $times, int $sleep = 0)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest sink(string|resource $to)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest stub(callable $callback)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest timeout(int $seconds)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withBasicAuth(string $username, string $password)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withBody(resource|string $content, string $contentType)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withCookies(array $cookies, string $domain)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withDigestAuth(string $username, string $password)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withHeaders(array $headers)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withMiddleware(callable $middleware)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withOptions(array $options)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withToken(string $token, string $type = 'Bearer')
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withUserAgent(string $userAgent)
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withoutRedirecting()
+ * @method \Behamin\ServiceProxy\Request\PendingRequest withoutVerifying()
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper delete(string $url = null, array $data = [])
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper get(string $url = null, array|string|null $query = null)
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper head(string $url = null, array|string|null $query = null)
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper patch(string $url = null, array $data = [])
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper post(string $url = null, array $data = [])
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper put(string $url = null, array $data = [])
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper send(string $method, string $url, array $options = [])
  *
  * @see PendingRequest
  */
@@ -28,8 +58,8 @@ class Http extends Factory implements RequestInfo
     protected string $service;
     protected array $headers = [];
     protected array $options = [];
-    protected $path = null;
-    protected $files = null;
+    protected ?string $path = null;
+    protected array $files = [];
 
     public function service(string $service): Http
     {
@@ -37,7 +67,7 @@ class Http extends Factory implements RequestInfo
         return $this;
     }
 
-    public function request(Request $request): \Illuminate\Http\Client\Response
+    public function request(Request $request): ResponseWrapper
     {
         $this->path = $request->path();
         $this->headers = $request->headers->all();
@@ -57,10 +87,9 @@ class Http extends Factory implements RequestInfo
             case Request::METHOD_PUT:
                 return $this->put();
             default:
-                throw new \Exception('method is not acceptable');
+                throw new NotAcceptableHttpException();
         }
     }
-
 
     /**
      * Create a new pending request instance for this factory.
@@ -95,7 +124,7 @@ class Http extends Factory implements RequestInfo
         return $this->service;
     }
 
-    public function getPath()
+    public function getPath(): ?string
     {
         return $this->path;
     }
