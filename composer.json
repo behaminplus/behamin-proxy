@@ -53,7 +53,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "ProxyServiceProvider"
+                "Behamin\\ServiceProxy\\ProxyServiceProvider"
             ],
             "aliases": {
                 "BSProxy": "Behamin\\ServiceProxy\\Proxy"
