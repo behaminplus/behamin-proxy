@@ -26,26 +26,30 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $path = $request->path();
 
-        $this->withHeaders(array_merge(
-            config('proxy.global_headers', []),
+        $this->withHeaders(
             $request->headers->all()
-        ));
-        $this->withOptions($request->all());
-        $this->pendingFiles = $request->files;
+        );
+
+        $data = $request->all();
+
+        foreach ($request->allFiles() as $name => $file) {
+            unset($data[$name]);
+            $this->attach($name, $file->get(), $file->getClientOriginalName());
+        }
 
         switch ($request->method()) {
             case Request::METHOD_GET:
-                return $this->get($path);
+                return $this->get($path, $data);
             case Request::METHOD_POST:
-                return $this->post($path);
+                return $this->post($path, $data);
             case Request::METHOD_DELETE:
-                return $this->delete($path);
+                return $this->delete($path, $data);
             case Request::METHOD_HEAD:
-                return $this->head($path);
+                return $this->head($path, $data);
             case Request::METHOD_PATCH:
-                return $this->patch($path);
+                return $this->patch($path, $data);
             case Request::METHOD_PUT:
-                return $this->put($path);
+                return $this->put($path, $data);
             default:
                 throw new NotAcceptableHttpException();
         }
@@ -53,30 +57,35 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
 
     public function get(string $url = null, $query = null)
     {
+        $this->prepare();
         $result = parent::get($this->fullUrl($url), $query);
         return $this->respond($result);
     }
 
     public function delete($url = null, $data = [])
     {
+        $this->prepare();
         $result = parent::delete($this->fullUrl($url), $data);
         return $this->respond($result);
     }
 
     public function head(string $url = null, $query = null)
     {
+        $this->prepare();
         $result = parent::head($this->fullUrl($url), $query);
         return $this->respond($result);
     }
 
     public function patch($url, $data = [])
     {
+        $this->prepare();
         $result = parent::patch($this->fullUrl($url), $data);
         return $this->respond($result);
     }
 
     public function post(string $url, array $data = [])
     {
+        $this->prepare();
         $result = parent::post($this->fullUrl($url), $data);
         return $this->respond($result);
     }
@@ -85,6 +94,13 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $result = parent::put($this->fullUrl($url), $data);
         return $this->respond($result);
+    }
+
+    public function prepare()
+    {
+        $this->withHeaders(
+            config('proxy.global_headers', []),
+        );
     }
 
     /**
