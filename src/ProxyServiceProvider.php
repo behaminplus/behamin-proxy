@@ -11,7 +11,7 @@ class ProxyServiceProvider extends ServiceProvider
         parent::register();
         $this->mergeConfigFrom(
             __DIR__.'/../config/proxy.php',
-            'bsproxy'
+            'proxy'
         );
     }
 
