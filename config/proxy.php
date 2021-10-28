@@ -9,5 +9,5 @@ return [
         'Accept' => 'application/json'
     ],
 
-    'proxy_base_url' => env('PROXY_BASE_URL', env('APP_URL')),
+    'base_url' => env('PROXY_BASE_URL', env('APP_URL')),
 ];

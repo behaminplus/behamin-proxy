@@ -17,7 +17,7 @@ class ProxyTest extends TestCase
     public function test_proxyRequest_ok()
     {
         Proxy::fake([
-            config('bsproxy.proxy_base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar']),
+            config('proxy.base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar']),
         ]);
 
         $request = Request::create('/api/path/1');
@@ -34,7 +34,7 @@ class ProxyTest extends TestCase
     public function test_proxyRequest_fail()
     {
         Proxy::fake([
-            config('bsproxy.proxy_base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar'], 400),
+            config('proxy.base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar'], 400),
         ]);
 
         $request = Request::create('/api/path/1');
@@ -53,7 +53,7 @@ class ProxyTest extends TestCase
     public function test_manualProxy_ok()
     {
         Proxy::fake([
-            config('bsproxy.proxy_base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar']),
+            config('proxy.base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar']),
         ]);
 
         Proxy::get('test-service/api/path/1')
@@ -66,7 +66,7 @@ class ProxyTest extends TestCase
     public function test_manualProxy_fail()
     {
         Proxy::fake([
-            config('bsproxy.proxy_base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar'], 400),
+            config('proxy.base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar'], 400),
         ]);
 
 

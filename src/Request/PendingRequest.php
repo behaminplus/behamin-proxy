@@ -27,7 +27,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         $path = $request->path();
 
         $this->withHeaders(array_merge(
-            config('bsproxy.global_headers', []),
+            config('proxy.global_headers', []),
             $request->headers->all()
         ));
         $this->withOptions($request->all());

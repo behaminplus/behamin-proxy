@@ -34,7 +34,7 @@ class UrlGenerator
     private static function getConfigBaseUrl(): string
     {
         // TODO check if url is a valid url
-        $url = config('bsproxy.proxy_base_url');
+        $url = config('proxy.base_url');
         if ($url == null) {
             throw new InvalidUrlException("Url isn't set in bsproxy config file");
         }
