@@ -56,7 +56,7 @@
                 "Behamin\\ServiceProxy\\ProxyServiceProvider"
             ],
             "aliases": {
-                "BSProxy": "Behamin\\ServiceProxy\\Proxy"
+                "Proxy": "Behamin\\ServiceProxy\\Proxy"
             }
         }
     }
