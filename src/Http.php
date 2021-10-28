@@ -6,10 +6,8 @@ namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Request\PendingRequest;
 use Behamin\ServiceProxy\Request\RequestInfo;
-use Behamin\ServiceProxy\Response\ResponseWrapper;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 /**
  * Class Http
@@ -50,14 +48,13 @@ use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper post(string $url = null, array $data = [])
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper put(string $url = null, array $data = [])
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper send(string $method, string $url, array $options = [])
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper request(Request $request)
  *
  * @see PendingRequest
  */
 class Http extends Factory implements RequestInfo
 {
-    protected string $service;
-    protected array $headers = [];
-    protected array $options = [];
+    protected string $service = '';
     protected ?string $path = null;
     protected array $files = [];
 
@@ -65,30 +62,6 @@ class Http extends Factory implements RequestInfo
     {
         $this->service = $service;
         return $this;
-    }
-
-    public function request(Request $request): ResponseWrapper
-    {
-        $this->path = $request->path();
-        $this->headers = $request->headers->all();
-        $this->options = $request->all();
-
-        switch ($request->method()) {
-            case Request::METHOD_GET:
-                return $this->get();
-            case Request::METHOD_POST:
-                return $this->post();
-            case Request::METHOD_DELETE:
-                return $this->delete();
-            case Request::METHOD_HEAD:
-                return $this->head();
-            case Request::METHOD_PATCH:
-                return $this->patch();
-            case Request::METHOD_PUT:
-                return $this->put();
-            default:
-                throw new NotAcceptableHttpException();
-        }
     }
 
     /**
@@ -127,20 +100,5 @@ class Http extends Factory implements RequestInfo
     public function getPath(): ?string
     {
         return $this->path;
-    }
-
-    public function getFiles()
-    {
-        // TODO: Implement getFiles() method.
-    }
-
-    public function getHeaders(): array
-    {
-        return $this->headers;
-    }
-
-    public function getOptions(): array
-    {
-        return $this->options;
     }
 }

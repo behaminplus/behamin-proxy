@@ -78,6 +78,26 @@ class ResponseWrapper
     }
 
     /**
+     * Throw an exception if a server or client error occurred.
+     *
+     * @return $this
+     */
+    public function throw(): ResponseWrapper
+    {
+        $callback = func_get_args()[0] ?? null;
+
+        if ($this->response->failed()) {
+            throw tap($this->toException(), function ($exception) use ($callback) {
+                if ($callback && is_callable($callback)) {
+                    $callback($this, $exception);
+                }
+            });
+        }
+
+        return $this;
+    }
+
+    /**
      * @return RequestInfo
      */
     public function getRequestInfo(): RequestInfo

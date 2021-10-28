@@ -7,14 +7,13 @@ namespace Behamin\ServiceProxy\Request;
 use Behamin\ServiceProxy\Response\ResponseWrapper;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 class PendingRequest extends \Illuminate\Http\Client\PendingRequest
 {
 
-    /**
-     * @var RequestInfo
-     */
     private RequestInfo $requestInfo;
 
     public function __construct(RequestInfo $serviceInterface, $factory = null)
@@ -23,56 +22,69 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         $this->requestInfo = $serviceInterface;
     }
 
+    public function request(Request $request): ResponseWrapper
+    {
+        $path = $request->path();
+
+        $this->withHeaders(array_merge(
+            config('bsproxy.global_headers', []),
+            $request->headers->all()
+        ));
+        $this->withOptions($request->all());
+        $this->pendingFiles = $request->files;
+
+        switch ($request->method()) {
+            case Request::METHOD_GET:
+                return $this->get($path);
+            case Request::METHOD_POST:
+                return $this->post($path);
+            case Request::METHOD_DELETE:
+                return $this->delete($path);
+            case Request::METHOD_HEAD:
+                return $this->head($path);
+            case Request::METHOD_PATCH:
+                return $this->patch($path);
+            case Request::METHOD_PUT:
+                return $this->put($path);
+            default:
+                throw new NotAcceptableHttpException();
+        }
+    }
+
     public function get(string $url = null, $query = null)
     {
-        $this->prepare();
         $result = parent::get($this->fullUrl($url), $query);
         return $this->respond($result);
     }
 
-    public function delete($url = null, $data = []): ResponseWrapper
+    public function delete($url = null, $data = [])
     {
-        $this->prepare();
         $result = parent::delete($this->fullUrl($url), $data);
         return $this->respond($result);
     }
 
     public function head(string $url = null, $query = null)
     {
-        $this->prepare();
         $result = parent::head($this->fullUrl($url), $query);
         return $this->respond($result);
     }
 
-    public function patch($url, $data = []): ResponseWrapper
+    public function patch($url, $data = [])
     {
-        $this->prepare();
         $result = parent::patch($this->fullUrl($url), $data);
         return $this->respond($result);
     }
 
-    public function post(string $url, array $data = []): ResponseWrapper
+    public function post(string $url, array $data = [])
     {
-        $this->prepare();
         $result = parent::post($this->fullUrl($url), $data);
         return $this->respond($result);
     }
 
-    public function put($url, $data = []): ResponseWrapper
+    public function put($url, $data = [])
     {
-        $this->prepare();
         $result = parent::put($this->fullUrl($url), $data);
         return $this->respond($result);
-    }
-
-
-    private function prepare()
-    {
-        $this->withHeaders(array_merge(
-            config('bsproxy.proxy_base_url', []),
-            $this->requestInfo->getHeaders()
-        ));
-        $this->withOptions($this->requestInfo->getOptions());
     }
 
     /**
@@ -106,7 +118,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
             }
         }
 
-        return $baseUrl.'/'.$servicePath.'/'.$finalPath;
+        return $baseUrl.($servicePath === '' ? $servicePath : '/'.$servicePath).'/'.$finalPath;
     }
 
     private function respond($result)
