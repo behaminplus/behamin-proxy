@@ -78,6 +78,11 @@ class ResponseWrapper
         return $this;
     }
 
+    public function json()
+    {
+        return $this->response->json();
+    }
+
     /**
      * Create an exception if a server or client error occurred.
      *
