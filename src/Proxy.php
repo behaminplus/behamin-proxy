@@ -2,6 +2,7 @@
 
 namespace Behamin\ServiceProxy;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Facade;
 
 /**
@@ -37,8 +38,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Behamin\ServiceProxy\Http withUserAgent(string $userAgent)
  * @method static \Behamin\ServiceProxy\Http withoutRedirecting()
  * @method static \Behamin\ServiceProxy\Http withoutVerifying()
- * @method static \Behamin\ServiceProxy\Http service(string $service)
  * @method static array pool(callable $callback)
+ * @method static \Behamin\ServiceProxy\Response\ResponseWrapper request(Request $request, string $service)
  * @method static \Illuminate\Http\Client\Response delete(string $url, array $data = [])
  * @method static \Behamin\ServiceProxy\Response\ResponseWrapper get(string $url, array|string|null $query = null)
  * @method static \Behamin\ServiceProxy\Response\ResponseWrapper head(string $url, array|string|null $query = null)

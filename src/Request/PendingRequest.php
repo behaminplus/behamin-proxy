@@ -13,28 +13,26 @@ use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 class PendingRequest extends \Illuminate\Http\Client\PendingRequest
 {
+    private string $service = '';
 
-    private RequestInfo $requestInfo;
-
-    public function __construct(RequestInfo $serviceInterface, $factory = null)
+    public function __construct($factory = null)
     {
         parent::__construct($factory);
-        $this->requestInfo = $serviceInterface;
     }
 
-    public function request(Request $request): ResponseWrapper
+    public function request(Request $request, string $service): ResponseWrapper
     {
+        $this->service = $service;
         $path = $request->path();
-
-        $this->withHeaders(
-            $request->headers->all()
-        );
-
         $data = $request->all();
 
         foreach ($request->allFiles() as $name => $file) {
             unset($data[$name]);
-            $this->attach($name, $file->get(), $file->getClientOriginalName());
+            $this->attach(
+                $name,
+                $request->file($name)->getContent(),
+                $request->file($name)->getClientOriginalName()
+            );
         }
 
         switch ($request->method()) {
@@ -92,6 +90,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
 
     public function put($url, $data = [])
     {
+        $this->prepare();
         $result = parent::put($this->fullUrl($url), $data);
         return $this->respond($result);
     }
@@ -107,10 +106,10 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
      * @param  null  $path
      * @return string
      */
-    private function fullUrl($path = null): string
+    private function fullUrl($path): string
     {
         $baseUrl = UrlGenerator::baseUrl();
-        $servicePath = $this->requestInfo->getService();
+        $servicePath = $this->service;
 
         if (Str::endsWith($baseUrl, '/')) {
             $baseUrl = Str::substr($baseUrl, 0, -1);
@@ -120,18 +119,10 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
             $servicePath = Str::substr($baseUrl, 1);
         }
 
-        if ($path == null) {
-            if (Str::startsWith($this->requestInfo->getPath(), '/')) {
-                $finalPath = Str::substr($this->requestInfo->getPath(), 1);
-            } else {
-                $finalPath = $this->requestInfo->getPath();
-            }
+        if (Str::startsWith($path, '/')) {
+            $finalPath = Str::substr($path, 1);
         } else {
-            if (Str::startsWith($path, '/')) {
-                $finalPath = Str::substr($path, 1);
-            } else {
-                $finalPath = $path;
-            }
+            $finalPath = $path;
         }
 
         return $baseUrl.($servicePath === '' ? $servicePath : '/'.$servicePath).'/'.$finalPath;
@@ -142,6 +133,6 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         if ($result instanceof PromiseInterface) {
             return $result;
         }
-        return new ResponseWrapper($result, $this->requestInfo);
+        return new ResponseWrapper($result);
     }
 }

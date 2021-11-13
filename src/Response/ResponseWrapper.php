@@ -4,19 +4,16 @@
 namespace Behamin\ServiceProxy\Response;
 
 use Behamin\ServiceProxy\Exceptions\ProxyException;
-use Behamin\ServiceProxy\Request\RequestInfo;
 use Illuminate\Http\Client\Response as HttpResponse;
 
 class ResponseWrapper
 {
 
     private HttpResponse $response;
-    private RequestInfo $requestInfo;
 
-    public function __construct(HttpResponse $response, RequestInfo $requestInfo)
+    public function __construct(HttpResponse $response)
     {
         $this->response = $response;
-        $this->requestInfo = $requestInfo;
     }
 
     public function data()
@@ -53,6 +50,22 @@ class ResponseWrapper
     {
         if ($this->response->successful()) {
             $closure($this);
+        }
+        return $this;
+    }
+
+    public function onDataSuccess(\Closure $closure): ResponseWrapper
+    {
+        if ($this->response->successful()) {
+            $closure($this->data());
+        }
+        return $this;
+    }
+
+    public function onCollectionSuccess(\Closure $closure): ResponseWrapper
+    {
+        if ($this->response->successful()) {
+            $closure($this->items(), $this->count());
         }
         return $this;
     }
@@ -95,13 +108,5 @@ class ResponseWrapper
         }
 
         return $this;
-    }
-
-    /**
-     * @return RequestInfo
-     */
-    public function getRequestInfo(): RequestInfo
-    {
-        return $this->requestInfo;
     }
 }

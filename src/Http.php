@@ -5,7 +5,6 @@ namespace Behamin\ServiceProxy;
 
 
 use Behamin\ServiceProxy\Request\PendingRequest;
-use Behamin\ServiceProxy\Request\RequestInfo;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
 
@@ -48,21 +47,13 @@ use Illuminate\Http\Request;
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper post(string $url = null, array $data = [])
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper put(string $url = null, array $data = [])
  * @method \Behamin\ServiceProxy\Response\ResponseWrapper send(string $method, string $url, array $options = [])
- * @method \Behamin\ServiceProxy\Response\ResponseWrapper request(Request $request)
+ * @method \Behamin\ServiceProxy\Response\ResponseWrapper request(Request $request, string $service)
  *
  * @see PendingRequest
  */
-class Http extends Factory implements RequestInfo
+class Http extends Factory
 {
-    protected string $service = '';
-    protected ?string $path = null;
     protected array $files = [];
-
-    public function service(string $service): Http
-    {
-        $this->service = $service;
-        return $this;
-    }
 
     /**
      * Create a new pending request instance for this factory.
@@ -71,7 +62,7 @@ class Http extends Factory implements RequestInfo
      */
     protected function newPendingRequest(): PendingRequest
     {
-        return new PendingRequest($this, $this);
+        return new PendingRequest($this);
     }
 
     /**
@@ -90,15 +81,5 @@ class Http extends Factory implements RequestInfo
         return tap($this->newPendingRequest(), function ($request) {
             $request->stub($this->stubCallbacks);
         })->{$method}(...$parameters);
-    }
-
-    public function getService(): string
-    {
-        return $this->service;
-    }
-
-    public function getPath(): ?string
-    {
-        return $this->path;
     }
 }

@@ -23,8 +23,7 @@ class ProxyTest extends TestCase
         $request = Request::create('/api/path/1');
 
 
-        Proxy::service('test-service')
-            ->request($request)
+        Proxy::request($request, 'test-service')
             ->onSuccess(function (ResponseWrapper $responseWrapper) {
                 assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
                 assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
@@ -40,8 +39,7 @@ class ProxyTest extends TestCase
         $request = Request::create('/api/path/1');
 
 
-        Proxy::service('test-service')
-            ->request($request)
+        Proxy::request($request,'test-service')
             ->onError(function (ProxyException $proxyException) {
                 assertEquals(400, $proxyException->getCode());
                 assertEquals(['foo' => 'bar'], $proxyException->responseWrapper->response()->json());
