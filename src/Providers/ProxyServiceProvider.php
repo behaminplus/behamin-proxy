@@ -1,6 +1,6 @@
 <?php
 
-namespace Behamin\ServiceProxy;
+namespace Behamin\ServiceProxy\Providers;
 
 use Illuminate\Support\ServiceProvider;
 

@@ -4,7 +4,7 @@ namespace Behamin\ServiceProxy\Tests\Feature;
 
 use Behamin\ServiceProxy\Exceptions\ProxyException;
 use Behamin\ServiceProxy\Proxy;
-use Behamin\ServiceProxy\Response\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ResponseWrapper;
 use Behamin\ServiceProxy\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;

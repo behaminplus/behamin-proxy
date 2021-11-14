@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Behamin\ServiceProxy\Response;
+namespace Behamin\ServiceProxy\Responses;
 
 use Behamin\ServiceProxy\Exceptions\ProxyException;
 use Illuminate\Http\Client\Response as HttpResponse;

@@ -2,7 +2,7 @@
 
 namespace Behamin\ServiceProxy\Exceptions;
 
-use Behamin\ServiceProxy\Response\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ResponseWrapper;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\Response;
 
@@ -35,8 +35,6 @@ class ProxyException extends HttpClientException
      */
     protected function context(): array
     {
-        return [
-            'proxy_path' => $this->responseWrapper->getRequestInfo()->getPath(),
-        ];
+        return [];
     }
 }

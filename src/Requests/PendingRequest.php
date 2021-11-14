@@ -1,10 +1,10 @@
 <?php
 
 
-namespace Behamin\ServiceProxy\Request;
+namespace Behamin\ServiceProxy\Requests;
 
 
-use Behamin\ServiceProxy\Response\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ResponseWrapper;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Request;
