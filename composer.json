@@ -12,8 +12,15 @@
     ],
     "type": "library",
     "require": {
-        "php": "^7.3|^8.0",
-        "laravel/framework": "^7.0|^8.0"
+        "php": "^7.4|^8.0",
+        "laravel/framework": "^7.0|^8.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0"
     },
     "license": "MIT",
     "authors": [
@@ -28,9 +35,14 @@
         {
             "name": "Hebrahimzadeh",
             "email": "abi.hossein@gmail.com"
+        },
+        {
+            "name": "Mohammad Hosein Abedini",
+            "email": "mohammadhoseinabedini@gmail.com"
         }
     ],
     "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Behamin\\ServiceProxy\\": "src/"
@@ -38,16 +50,16 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Behamin\\ServiceProxy\\Tests": "tests/"
+            "Behamin\\ServiceProxy\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Behamin\\ServiceProxy\\BSProxyServiceProvider"
+                "Behamin\\ServiceProxy\\Providers\\ProxyServiceProvider"
             ],
             "aliases": {
-                "BSProxy": "Behamin\\ServiceProxy\\Proxy"
+                "Proxy": "Behamin\\ServiceProxy\\Proxy"
             }
         }
     }

@@ -1,62 +1,198 @@
 # Service Proxy
+
 Internal communication between services with useful tools
 <br>
-Make request by dispatch and laravel http client  
+Make request by laravel http client
 
-## install 
-```
+## Installation
+
+```bash
 composer require behamin/service-proxy
 ```
+
 ### Publish config
+
+```bash
+php artisan vendor:publish --provider="Behamin\ServiceProxy\Providers\ProxyServiceProvider" --tag config
 ```
-php artisan vendor:publish --provider="Behamin\ServiceProxy\BSProxyServiceProvider" --tag config
-```
+
 ### Add services
-Add your services in `proxy-services-url.php` config
-```
+
+Add your project's base url and global headers in `proxy.php` config
+
+```php
 return [
+    /**
+     * Headers added to every request
+     */
+    'global_headers' => [
+        'Accept' => 'application/json',
+        ...
+    ],
 
-    'USER'          => 'user-service',
-    ...
-    'GLOBAL_APP_URL' => env('GLOBAL_APP_URL', 'https://yourAppUrl.dom')
-]
+    'base_url' => env('PROXY_BASE_URL', env('APP_URL')),
+];
 ```
+
 ## Usage
-```
-BSProxy::makeRequest(null, 'SERVICE_NAME', $method = 'get', $path = null, $modelId = null, $data=[], $headers=[])
-```
-Use only with $request variable 
-```
-BSProxy::makeRequest($request, 'USER', 'POST')
-```  
-notice if not passed method parameter, override with default value: GET method
-<br>
-### Another make request by chaining methods
-```
-$response = PSProxy::withProxyResponse()
-            ->setData(
-                [
-                    'ids' => [1, 2, 3]
-                ]
-            )
-            ->setPath('/products')
-            ->setMethod('POST')
-            ->makeRequest(null, 'USER');
+
+### Normal usage
+
+```php
+use Behamin\ServiceProxy\Proxy;
+
+// Http Get
+Proxy::withToken('Your bearer token')
+    ->acceptJson()
+    ->retry(3)
+    ->withHeaders([
+        "Content-Type" => "application\json"
+    ])->get('api/articles');
+    
+Proxy::post('api/articles', [
+    "title" => "Test title",
+    "body" => "Test body"
+]);
+
+Proxy::patch('api/articles/1', [
+    "title" => "Test title",
+    "body" => "Test body"
+]);
+
+Proxy::put('api/articles', [
+    "title" => "Test title",
+    "body" => "Test body"
+]);
+
+Proxy::delete('api/articles/1');
 ```
 
-### With Proxy Response
-by use ```withProxyResponse``` method, returns an instance of ```BSProxyResponse``` 
-which provides a variety methods that may be used to inspect the response 
-and get data (item or items) , handle errors with exception.
+### Using http request
+
+```php
+use Behamin\ServiceProxy\Proxy;
+use Illuminate\Http\Request;
+
+public function index(Request $request) {
+    $serviceName = 'test-service';
+    Proxy::request($request, $serviceName);
+}
 ```
-$response->getStatusCode() : int;
-$response->successful() : bool;
-$response->failed() : bool;
-$response->hasError() : bool;
-$response->getErrors() : array;
-$response->items() : array;
-$response->item() : object;
-$response->getInfo() : array;
-$response->body() : string;
-$response->getProxy() : Proxy;
+
+### Proxy events
+
+#### On success
+```php
+use Behamin\ServiceProxy\Proxy;
+use Behamin\ServiceProxy\Responses\ResponseWrapper;
+ 
+Proxy::get('api/articles/1')->onSuccess(function (ResponseWrapper $responseWrapper) {
+        $data = $responseWrapper->data();
+        $message = $responseWrapper->message();
+        $response = $responseWrapper->response();
+        $items = $responseWrapper->items();
+        $count = $responseWrapper->count();
+        ...
+    });
 ```
+
+#### On error
+```php
+use Behamin\ServiceProxy\Proxy;
+use Behamin\ServiceProxy\Exceptions\ProxyException;
+ 
+Proxy::get('api/articles/1')->onSuccess(function (ProxyException $proxyException) {
+        $responseWrapper = $proxyException->responseWrapper;
+        $trace = $proxyException->getTraceAsString();
+        ...
+    });
+```
+
+#### On data success
+```php
+use Behamin\ServiceProxy\Proxy;
+ 
+Proxy::get('api/articles/1')->onDataSuccess(function (array $data) {
+        $id = $data['id'];
+    });
+```
+
+#### On data collection success
+```php
+use Behamin\ServiceProxy\Proxy;
+ 
+Proxy::get('api/articles/1')->onCollectionSuccess(function (array $items, int $count) {
+        ...
+    });
+```
+
+
+### Response wrapper methods
+```php
+use Behamin\ServiceProxy\Proxy;
+
+$responseWrapper = Proxy::get('api/articles/1');
+```
+
+| Method                        | Description                                    |
+| ----------------------------- | ---------------------------------------------- |
+| data()                        | given data                                     |
+| items()                       | give items                                     |
+| count()                       | given items count                              |
+| errors()                      | given errors if there is                       |
+| message()                     | given message                                  |
+| onSuccess($closure)           | When http request is successful                |
+| onError($closure)             | When http request is with error                |
+| onCollectionSuccess($closure) | Get collection when http request is successful |
+| onDataSuccess($closure)       | Get data when http request is successful       |
+| throw()                       | Throw error if http request failed             |
+| toException()                 | Get exception if http request failed           |
+
+### Proxy request methods
+
+| Method                        | Return Type                                    |
+| ----------------------------- | ---------------------------------------------- |
+fake($callback = null) | \Illuminate\Http\Client\Factory
+accept(string $contentType) | \Behamin\ServiceProxy\Http 
+acceptJson() | \Behamin\ServiceProxy\Http 
+asForm() | \Behamin\ServiceProxy\Http 
+asJson() | \Behamin\ServiceProxy\Http 
+asMultipart() | \Behamin\ServiceProxy\Http 
+async() | \Behamin\ServiceProxy\Http 
+attach(string array $name, string $contents = '', string null $filename = null, array $headers = []) | \Behamin\ServiceProxy\Http 
+baseUrl(string $url) | \Behamin\ServiceProxy\Http 
+beforeSending(callable $callback) | \Behamin\ServiceProxy\Http 
+bodyFormat(string $format) | \Behamin\ServiceProxy\Http 
+contentType(string $contentType) | \Behamin\ServiceProxy\Http 
+dd() | \Behamin\ServiceProxy\Http 
+dump() | \Behamin\ServiceProxy\Http 
+retry(int $times, int $sleep = 0) | \Behamin\ServiceProxy\Http 
+sink(string|resource $to) | \Behamin\ServiceProxy\Http 
+stub(callable $callback) | \Behamin\ServiceProxy\Http 
+timeout(int $seconds) | \Behamin\ServiceProxy\Http 
+withBasicAuth(string $username, string $password) | \Behamin\ServiceProxy\Http 
+withBody(resource|string $content, string $contentType) | \Behamin\ServiceProxy\Http 
+withCookies(array $cookies, string $domain) | \Behamin\ServiceProxy\Http 
+withDigestAuth(string $username, string $password) | \Behamin\ServiceProxy\Http 
+withHeaders(array $headers) | \Behamin\ServiceProxy\Http 
+withMiddleware(callable $middleware) | \Behamin\ServiceProxy\Http 
+withOptions(array $options) | \Behamin\ServiceProxy\Http 
+withToken(string $token, string $type = 'Bearer') | \Behamin\ServiceProxy\Http 
+withUserAgent(string $userAgent) | \Behamin\ServiceProxy\Http 
+withoutRedirecting() | \Behamin\ServiceProxy\Http 
+withoutVerifying() | \Behamin\ServiceProxy\Http 
+pool(callable $callback) | array
+request(Request $request, string $service) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+get(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+delete(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+head(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+patch(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+post(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+put(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+send(string $method, string $url, array $options = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+fakeSequence(string $urlPattern = '*') | \Illuminate\Http\Client\ResponseSequence
+assertSent(callable $callback) | void 
+assertNotSent(callable $callback) | void 
+assertNothingSent() | void 
+assertSentCount(int $count) | void 
+assertSequencesAreEmpty() | void
