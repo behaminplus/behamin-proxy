@@ -3,10 +3,15 @@
 
 namespace Behamin\ServiceProxy\Responses;
 
+use ArrayAccess;
 use Behamin\ServiceProxy\Exceptions\ProxyException;
+use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Client\Response as HttpResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 
-class ResponseWrapper
+class ResponseWrapper implements Jsonable, Responsable, ArrayAccess
 {
 
     private HttpResponse $response;
@@ -113,5 +118,45 @@ class ResponseWrapper
         }
 
         return $this;
+    }
+
+    public function toResponse($request)
+    {
+        return response($this->response()->body(), $this->response->status());
+    }
+
+    public function jsonResponse(): JsonResponse
+    {
+        return response($this->response()->json(), $this->response->status())->json();
+    }
+
+    public function toJson($options = 0)
+    {
+        return $this->json();
+    }
+
+    public function offsetExists($offset): bool
+    {
+        return $this->response->offsetExists($offset);
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->response->offsetGet($offset);
+    }
+
+    public function offsetSet($offset, $value): void
+    {
+        $this->response->offsetSet($offset, $value);
+    }
+
+    public function offsetUnset($offset): void
+    {
+        $this->response->offsetUnset($offset);
+    }
+
+    public function collect(): Collection
+    {
+        return $this->response->collect();
     }
 }
