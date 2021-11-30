@@ -33,7 +33,7 @@ class ProxyException extends HttpClientException
      *
      * @return array
      */
-    protected function context(): array
+    public function context(): array
     {
         return [];
     }
