@@ -5,6 +5,7 @@ namespace Behamin\ServiceProxy\Exceptions;
 use Behamin\ServiceProxy\Responses\ResponseWrapper;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
 
 class ProxyException extends HttpClientException
 {
@@ -13,7 +14,6 @@ class ProxyException extends HttpClientException
     public function __construct(ResponseWrapper $responseWrapper)
     {
         parent::__construct($this->prepareMessage($responseWrapper->response()), $responseWrapper->response()->status());
-
         $this->responseWrapper = $responseWrapper;
     }
 
@@ -26,6 +26,11 @@ class ProxyException extends HttpClientException
             : \GuzzleHttp\Psr7\get_message_body_summary($response->toPsrResponse());
 
         return is_null($summary) ? $message : $message.":\n$summary\n";
+    }
+
+    public function render(Request $request) {
+        $errors = $this->responseWrapper->errors();
+        return apiResponse()->errors($errors['message'], $errors['errors'])->status($this->getCode())->get();
     }
 
     /**

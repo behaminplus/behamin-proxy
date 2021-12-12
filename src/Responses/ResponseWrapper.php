@@ -1,5 +1,6 @@
 <?php
 
+
 namespace Behamin\ServiceProxy\Responses;
 
 use ArrayAccess;
@@ -33,7 +34,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
 
     public function errors()
     {
-        return $this->json()['errors'];
+        return $this->json()['error'];
     }
 
     public function items()
@@ -108,12 +109,13 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
      */
     public function throw(?Closure $closure = null): ResponseWrapper
     {
-        if ($this->response->failed() && !is_null($closure)) {
+        if ($this->response->failed()) {
             throw tap($this->toException(), function ($exception) use ($closure) {
-                return $closure($this, $exception);
+                if (!is_null($closure)) {
+                    $closure($this, $exception);
+                }
             });
         }
-
         return $this;
     }
 
