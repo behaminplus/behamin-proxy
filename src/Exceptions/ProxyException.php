@@ -31,12 +31,12 @@ class ProxyException extends HttpClientException
         $proxyError = $this->responseWrapper->json();
         if (isset($proxyError['error'])) {
             $errors = $this->responseWrapper->errors();
-        } elseif (isset($proxyError['message'])) {
-            $errors['message'] = $this->responseWrapper->message();
-            $errors['errors'] = null;
-        } else {
+        } elseif (isset($proxyError['message'], $proxyError['trace'])) {
             $errors['message'] = $this->getMessage();
             $errors['errors'] = $this->responseWrapper->json();
+        } else {
+            $errors['message'] = $this->responseWrapper->message();
+            $errors['errors'] = null;
         }
         return apiResponse()->errors($errors['message'], $errors['errors'])->status($this->getCode())->get();
     }
