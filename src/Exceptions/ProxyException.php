@@ -13,23 +13,31 @@ class ProxyException extends HttpClientException
 
     public function __construct(ResponseWrapper $responseWrapper)
     {
-        parent::__construct($this->prepareMessage($responseWrapper->response()), $responseWrapper->response()->status());
         $this->responseWrapper = $responseWrapper;
+        parent::__construct(
+            $this->prepareMessage($responseWrapper->response()),
+            $responseWrapper->response()->status()
+        );
     }
 
     protected function prepareMessage(Response $response): string
     {
-        $message = "HTTP request returned status code {$response->status()}";
-
-        $summary = class_exists(\GuzzleHttp\Psr7\Message::class)
-            ? \GuzzleHttp\Psr7\Message::bodySummary($response->toPsrResponse())
-            : \GuzzleHttp\Psr7\get_message_body_summary($response->toPsrResponse());
-
-        return is_null($summary) ? $message : $message.":\n$summary\n";
+        $proxyPath = $this->responseWrapper->response()->effectiveUri()->getPath();
+        return "Request from {$proxyPath} failed with status code {$response->status()}";
     }
 
-    public function render(Request $request) {
-        $errors = $this->responseWrapper->errors();
+    public function render(Request $request)
+    {
+        $proxyError = $this->responseWrapper->json();
+        if (isset($proxyError['error'])) {
+            $errors = $this->responseWrapper->errors();
+        } elseif (isset($proxyError['message'])) {
+            $errors['message'] = $this->responseWrapper->message();
+            $errors['errors'] = null;
+        } else {
+            $errors['message'] = $this->getMessage();
+            $errors['errors'] = $this->responseWrapper->json();
+        }
         return apiResponse()->errors($errors['message'], $errors['errors'])->status($this->getCode())->get();
     }
 
