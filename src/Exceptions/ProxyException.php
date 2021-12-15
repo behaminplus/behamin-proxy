@@ -9,28 +9,28 @@ use Illuminate\Http\JsonResponse;
 
 class ProxyException extends HttpClientException
 {
-    public ProxyResponse $responseWrapper;
+    public ProxyResponse $proxyResponse;
 
-    public function __construct(ProxyResponse $responseWrapper)
+    public function __construct(ProxyResponse $proxyResponse)
     {
-        $this->responseWrapper = $responseWrapper;
+        $this->proxyResponse = $proxyResponse;
 
         parent::__construct(
-            $this->prepareMessage($responseWrapper->response()),
-            $responseWrapper->response()->status()
+            $this->prepareMessage($proxyResponse->response()),
+            $proxyResponse->response()->status()
         );
     }
 
     protected function prepareMessage(Response $response): string
     {
-        $proxyPath = optional($this->responseWrapper->response()->effectiveUri())->getPath();
+        $proxyPath = optional($this->proxyResponse->response()->effectiveUri())->getPath();
 
         return "Request from $proxyPath failed with status code {$response->status()}";
     }
 
     public function render(): JsonResponse
     {
-        $jsonResponse = $this->responseWrapper->json();
+        $jsonResponse = $this->proxyResponse->json();
 
         if (isset($jsonResponse['error']['message'], $jsonResponse['error']['errors'])) {
             $error = $jsonResponse['error'];

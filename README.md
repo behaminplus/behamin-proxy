@@ -98,12 +98,13 @@ Proxy::get('api/articles/1')->onSuccess(function (ProxyResponse $responseWrapper
 ```
 
 #### On error
+
 ```php
 use Behamin\ServiceProxy\Proxy;
 use Behamin\ServiceProxy\Exceptions\ProxyException;
  
 Proxy::get('api/articles/1')->onSuccess(function (ProxyException $proxyException) {
-        $responseWrapper = $proxyException->responseWrapper;
+        $proxyResponse = $proxyException->proxyResponse;
         $trace = $proxyException->getTraceAsString();
         ...
     });
