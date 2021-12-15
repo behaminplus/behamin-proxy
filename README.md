@@ -82,11 +82,12 @@ public function index(Request $request) {
 ### Proxy events
 
 #### On success
+
 ```php
 use Behamin\ServiceProxy\Proxy;
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
  
-Proxy::get('api/articles/1')->onSuccess(function (ResponseWrapper $responseWrapper) {
+Proxy::get('api/articles/1')->onSuccess(function (ProxyResponse $responseWrapper) {
         $data = $responseWrapper->data();
         $message = $responseWrapper->message();
         $response = $responseWrapper->response();
@@ -182,14 +183,14 @@ withUserAgent(string $userAgent) | \Behamin\ServiceProxy\Http
 withoutRedirecting() | \Behamin\ServiceProxy\Http 
 withoutVerifying() | \Behamin\ServiceProxy\Http 
 pool(callable $callback) | array
-request(Request $request, string $service) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-get(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-delete(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-head(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-patch(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-post(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-put(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
-send(string $method, string $url, array $options = []) | \Behamin\ServiceProxy\Responses\ResponseWrapper 
+request(Request $request, string $service) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+get(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+delete(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+head(string $url, array|string|null $query = null) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+patch(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+post(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+put(string $url, array $data = []) | \Behamin\ServiceProxy\Responses\ProxyResponse 
+send(string $method, string $url, array $options = []) | \Behamin\ServiceProxy\Responses\ProxyResponse 
 fakeSequence(string $urlPattern = '*') | \Illuminate\Http\Client\ResponseSequence
 assertSent(callable $callback) | void 
 assertNotSent(callable $callback) | void 

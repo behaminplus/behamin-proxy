@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Behamin\ServiceProxy\Responses;
 
 use ArrayAccess;
@@ -13,7 +12,7 @@ use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 
-class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
+class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
 {
     private HttpResponse $response;
 
@@ -32,7 +31,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->json()['message'];
     }
 
-    public function errors()
+    public function error()
     {
         return $this->json()['error'];
     }
@@ -52,7 +51,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->response;
     }
 
-    public function onSuccess(Closure $closure): ResponseWrapper
+    public function onSuccess(Closure $closure): ProxyResponse
     {
         if ($this->response->successful()) {
             $closure($this);
@@ -61,27 +60,30 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this;
     }
 
-    public function onDataSuccess(Closure $closure): ResponseWrapper
+    public function onDataSuccess(Closure $closure): ProxyResponse
     {
         if ($this->response->successful()) {
             $closure($this->data());
         }
+
         return $this;
     }
 
-    public function onCollectionSuccess(Closure $closure): ResponseWrapper
+    public function onCollectionSuccess(Closure $closure): ProxyResponse
     {
         if ($this->response->successful()) {
             $closure($this->items(), $this->count());
         }
+
         return $this;
     }
 
-    public function onError(Closure $closure): ResponseWrapper
+    public function onError(Closure $closure): ProxyResponse
     {
         if ($this->response->failed()) {
             $closure($this->toException());
         }
+
         return $this;
     }
 
@@ -107,7 +109,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
      *
      * @return $this
      */
-    public function throw(?Closure $closure = null): ResponseWrapper
+    public function throw(?Closure $closure = null): ProxyResponse
     {
         if ($this->response->failed()) {
             throw tap($this->toException(), function ($exception) use ($closure) {
@@ -116,6 +118,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
                 }
             });
         }
+
         return $this;
     }
 
@@ -124,6 +127,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         if ($this->response->header('Content-Type') === 'application/json') {
             return response()->json($this->json(), $this->response->status());
         }
+
         return response($this->response()->body(), $this->response->status());
     }
 
@@ -134,7 +138,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
 
     public function toJson($options = 0)
     {
-        return json_encode($this->json(), JSON_THROW_ON_ERROR);
+        return json_encode($this->json(), $options | JSON_THROW_ON_ERROR);
     }
 
     public function offsetExists($offset): bool

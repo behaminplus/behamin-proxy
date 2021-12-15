@@ -4,7 +4,7 @@
 namespace Behamin\ServiceProxy\Requests;
 
 
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Request;
@@ -20,7 +20,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         parent::__construct($factory);
     }
 
-    public function request(Request $request, string $service): ResponseWrapper
+    public function request(Request $request, string $service): ProxyResponse
     {
         $this->service = $service;
         $path = $request->path();
@@ -133,6 +133,6 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         if ($result instanceof PromiseInterface) {
             return $result;
         }
-        return new ResponseWrapper($result);
+        return new ProxyResponse($result);
     }
 }

@@ -4,7 +4,7 @@ namespace Behamin\ServiceProxy\Tests\Feature;
 
 use Behamin\ServiceProxy\Exceptions\ProxyException;
 use Behamin\ServiceProxy\Proxy;
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -24,7 +24,7 @@ class ProxyTest extends TestCase
 
 
         Proxy::request($request, 'test-service')
-            ->onSuccess(function (ResponseWrapper $responseWrapper) {
+            ->onSuccess(function (ProxyResponse $responseWrapper) {
                 assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
                 assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
             });
@@ -55,7 +55,7 @@ class ProxyTest extends TestCase
         ]);
 
         Proxy::get('test-service/api/path/1')
-            ->onSuccess(function (ResponseWrapper $responseWrapper) {
+            ->onSuccess(function (ProxyResponse $responseWrapper) {
                 assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
                 assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
             });
