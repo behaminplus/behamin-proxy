@@ -122,6 +122,21 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this;
     }
 
+    public function jsonResponse(): JsonResponse
+    {
+        return response()->json($this->response()->json(), $this->response->status());
+    }
+
+    public function toJson($options = 0)
+    {
+        return json_encode($this->json(), $options | JSON_THROW_ON_ERROR);
+    }
+
+    public function toArray()
+    {
+        return $this->json();
+    }
+
     public function toResponse($request)
     {
         if ($this->response->header('Content-Type') === 'application/json') {
@@ -129,16 +144,6 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         }
 
         return response($this->response()->body(), $this->response->status());
-    }
-
-    public function jsonResponse(): JsonResponse
-    {
-        return response($this->response()->json(), $this->response->status())->json();
-    }
-
-    public function toJson($options = 0)
-    {
-        return json_encode($this->json(), $options | JSON_THROW_ON_ERROR);
     }
 
     public function offsetExists($offset): bool
@@ -164,10 +169,5 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
     public function collect(): Collection
     {
         return $this->response->collect();
-    }
-
-    public function toArray()
-    {
-        return $this->json();
     }
 }
