@@ -2,52 +2,46 @@
 
 namespace Behamin\ServiceProxy\Exceptions;
 
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\Response;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ProxyException extends HttpClientException
 {
-    public ResponseWrapper $responseWrapper;
+    public ProxyResponse $proxyResponse;
 
-    public function __construct(ResponseWrapper $responseWrapper)
+    public function __construct(ProxyResponse $proxyResponse)
     {
-        $this->responseWrapper = $responseWrapper;
+        $this->proxyResponse = $proxyResponse;
+
         parent::__construct(
-            $this->prepareMessage($responseWrapper->response()),
-            $responseWrapper->response()->status()
+            $this->prepareMessage($proxyResponse->response()),
+            $proxyResponse->response()->status()
         );
     }
 
     protected function prepareMessage(Response $response): string
     {
-        $proxyPath = $this->responseWrapper->response()->effectiveUri()->getPath();
-        return "Request from {$proxyPath} failed with status code {$response->status()}";
+        $proxyPath = optional($this->proxyResponse->response()->effectiveUri())->getPath();
+
+        return "Request from $proxyPath failed with status code {$response->status()}";
     }
 
-    public function render(Request $request)
+    public function render(): JsonResponse
     {
-        $proxyError = $this->responseWrapper->json();
-        if (isset($proxyError['error'])) {
-            $errors = $this->responseWrapper->errors();
-        } elseif (isset($proxyError['message'], $proxyError['trace'])) {
-            $errors['message'] = $this->getMessage();
-            $errors['errors'] = $this->responseWrapper->json();
+        $jsonResponse = $this->proxyResponse->json();
+
+        if (isset($jsonResponse['error']['message'], $jsonResponse['error']['errors'])) {
+            $error = $jsonResponse['error'];
+        } elseif (isset($jsonResponse['message'], $jsonResponse['trace'])) {
+            $error['message'] = $this->getMessage();
+            $error['errors'] = $jsonResponse;
         } else {
-            $errors['message'] = $this->responseWrapper->message();
-            $errors['errors'] = null;
+            $error['message'] = $jsonResponse['message'] ?? $this->getMessage();
+            $error['errors'] = null;
         }
-        return apiResponse()->errors($errors['message'], $errors['errors'])->status($this->getCode())->get();
-    }
 
-    /**
-     * Get the default context variables for logging.
-     *
-     * @return array
-     */
-    public function context(): array
-    {
-        return [];
+        return apiResponse()->errors($error['message'], $error['errors'])->status($this->getCode())->get();
     }
 }

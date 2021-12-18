@@ -4,13 +4,12 @@ namespace Behamin\ServiceProxy\Tests\Feature;
 
 use Behamin\ServiceProxy\Exceptions\ProxyException;
 use Behamin\ServiceProxy\Proxy;
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 use function PHPUnit\Framework\assertEquals;
-
 
 class ProxyTest extends TestCase
 {
@@ -22,9 +21,8 @@ class ProxyTest extends TestCase
 
         $request = Request::create('/api/path/1');
 
-
         Proxy::request($request, 'test-service')
-            ->onSuccess(function (ResponseWrapper $responseWrapper) {
+            ->onSuccess(function (ProxyResponse $responseWrapper) {
                 assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
                 assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
             });
@@ -38,13 +36,12 @@ class ProxyTest extends TestCase
 
         $request = Request::create('/api/path/1');
 
-
         Proxy::request($request,'test-service')
             ->onError(function (ProxyException $proxyException) {
                 assertEquals(400, $proxyException->getCode());
-                assertEquals(['foo' => 'bar'], $proxyException->responseWrapper->response()->json());
+                assertEquals(['foo' => 'bar'], $proxyException->proxyResponse->response()->json());
                 assertEquals('/test-service/api/path/1',
-                    $proxyException->responseWrapper->response()->effectiveUri()->getPath());
+                    $proxyException->proxyResponse->response()->effectiveUri()->getPath());
             });
     }
 
@@ -55,7 +52,7 @@ class ProxyTest extends TestCase
         ]);
 
         Proxy::get('test-service/api/path/1')
-            ->onSuccess(function (ResponseWrapper $responseWrapper) {
+            ->onSuccess(function (ProxyResponse $responseWrapper) {
                 assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
                 assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
             });
@@ -67,13 +64,12 @@ class ProxyTest extends TestCase
             config('proxy.base_url').'/test-service/api/path/1' => Http::response(['foo' => 'bar'], 400),
         ]);
 
-
         Proxy::get('test-service/api/path/1')
             ->onError(function (ProxyException $proxyException) {
                 assertEquals(400, $proxyException->getCode());
-                assertEquals(['foo' => 'bar'], $proxyException->responseWrapper->response()->json());
+                assertEquals(['foo' => 'bar'], $proxyException->proxyResponse->response()->json());
                 assertEquals('/test-service/api/path/1',
-                    $proxyException->responseWrapper->response()->effectiveUri()->getPath());
+                    $proxyException->proxyResponse->response()->effectiveUri()->getPath());
             });
     }
 }
