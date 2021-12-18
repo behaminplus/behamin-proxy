@@ -70,6 +70,7 @@ Proxy::delete('api/articles/1');
 ### Using http request
 
 ```php
+
 use Behamin\ServiceProxy\Proxy;
 use Illuminate\Http\Request;
 
@@ -77,6 +78,7 @@ public function index(Request $request) {
     $serviceName = 'test-service';
     Proxy::request($request, $serviceName);
 }
+
 ```
 
 ### Proxy events
@@ -87,12 +89,12 @@ public function index(Request $request) {
 use Behamin\ServiceProxy\Proxy;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
  
-Proxy::get('api/articles/1')->onSuccess(function (ProxyResponse $responseWrapper) {
-        $data = $responseWrapper->data();
-        $message = $responseWrapper->message();
-        $response = $responseWrapper->response();
-        $items = $responseWrapper->items();
-        $count = $responseWrapper->count();
+Proxy::get('api/articles/1')->onSuccess(function (ProxyResponse $proxyResponse) {
+        $data = $proxyResponse->data();
+        $message = $proxyResponse->message();
+        $response = $proxyResponse->response();
+        $items = $proxyResponse->items();
+        $count = $proxyResponse->count();
         ...
     });
 ```
@@ -129,11 +131,11 @@ Proxy::get('api/articles/1')->onCollectionSuccess(function (array $items, int $c
 ```
 
 
-### Response wrapper methods
+### Proxy response methods
 ```php
 use Behamin\ServiceProxy\Proxy;
 
-$responseWrapper = Proxy::get('api/articles/1');
+$proxyResponse = Proxy::get('api/articles/1');
 ```
 
 | Method                        | Description                                    |
