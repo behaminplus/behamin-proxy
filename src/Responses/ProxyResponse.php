@@ -140,10 +140,10 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
     public function toResponse($request)
     {
         if ($this->response()->header('Content-Type') === 'application/json') {
-            return response()->json($this->json(), $this->response()->status());
+            return $this->jsonResponse();
         }
 
-        return response($this->response()->body(), $this->response()->status());
+        return response($this->response()->body(), $this->status());
     }
 
     public function offsetExists($offset): bool
