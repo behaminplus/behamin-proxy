@@ -2,44 +2,46 @@
 
 namespace Behamin\ServiceProxy\Exceptions;
 
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\Response;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class ProxyException extends HttpClientException
 {
-    public ResponseWrapper $responseWrapper;
+    public ProxyResponse $proxyResponse;
 
-    public function __construct(ResponseWrapper $responseWrapper)
+    public function __construct(ProxyResponse $proxyResponse)
     {
-        parent::__construct($this->prepareMessage($responseWrapper->response()), $responseWrapper->response()->status());
-        $this->responseWrapper = $responseWrapper;
+        $this->proxyResponse = $proxyResponse;
+
+        parent::__construct(
+            $this->prepareMessage($proxyResponse->response()),
+            $proxyResponse->response()->status()
+        );
     }
 
     protected function prepareMessage(Response $response): string
     {
-        $message = "HTTP request returned status code {$response->status()}";
+        $proxyPath = optional($this->proxyResponse->response()->effectiveUri())->getPath();
 
-        $summary = class_exists(\GuzzleHttp\Psr7\Message::class)
-            ? \GuzzleHttp\Psr7\Message::bodySummary($response->toPsrResponse())
-            : \GuzzleHttp\Psr7\get_message_body_summary($response->toPsrResponse());
-
-        return is_null($summary) ? $message : $message.":\n$summary\n";
+        return "Request from $proxyPath failed with status code {$response->status()}";
     }
 
-    public function render(Request $request) {
-        $errors = $this->responseWrapper->errors();
-        return apiResponse()->errors($errors['message'], $errors['errors'])->status($this->getCode())->get();
-    }
-
-    /**
-     * Get the default context variables for logging.
-     *
-     * @return array
-     */
-    public function context(): array
+    public function render(): JsonResponse
     {
-        return [];
+        $jsonResponse = $this->proxyResponse->json();
+
+        if (isset($jsonResponse['error']['message'], $jsonResponse['error']['errors'])) {
+            $error = $jsonResponse['error'];
+        } elseif (isset($jsonResponse['message'], $jsonResponse['trace'])) {
+            $error['message'] = $this->getMessage();
+            $error['errors'] = $jsonResponse;
+        } else {
+            $error['message'] = $jsonResponse['message'] ?? $this->getMessage();
+            $error['errors'] = null;
+        }
+
+        return apiResponse()->errors($error['message'], $error['errors'])->status($this->getCode())->get();
     }
 }

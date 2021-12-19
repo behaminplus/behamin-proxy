@@ -15,10 +15,10 @@
         "php": "^7.4|^8.0",
         "laravel/framework": "^7.0|^8.0",
         "guzzlehttp/guzzle": "^7.0",
-        "behamin/bresources": "^2.0|^v1.5"
+        "behamin/bresources": "^2.2|^1.5"
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit --color=always"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0"

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Behamin\ServiceProxy\Responses;
 
 use ArrayAccess;
@@ -13,7 +12,7 @@ use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 
-class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
+class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
 {
     private HttpResponse $response;
 
@@ -32,7 +31,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->json()['message'];
     }
 
-    public function errors()
+    public function error()
     {
         return $this->json()['error'];
     }
@@ -47,47 +46,65 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->json()['data']['count'];
     }
 
-    public function response(): HttpResponse
+    public function json()
     {
-        return $this->response;
+        return $this->response()->json();
     }
 
-    public function onSuccess(Closure $closure): ResponseWrapper
+    public function status(): int
     {
-        if ($this->response->successful()) {
+        return $this->response()->status();
+    }
+
+    public function jsonResponse(): JsonResponse
+    {
+        return response()->json($this->response()->json(), $this->status());
+    }
+
+    public function toJson($options = 0)
+    {
+        return json_encode($this->json(), $options | JSON_THROW_ON_ERROR);
+    }
+
+    public function toArray()
+    {
+        return $this->json();
+    }
+
+    public function onSuccess(Closure $closure): ProxyResponse
+    {
+        if ($this->response()->successful()) {
             $closure($this);
         }
 
         return $this;
     }
 
-    public function onDataSuccess(Closure $closure): ResponseWrapper
+    public function onDataSuccess(Closure $closure): ProxyResponse
     {
-        if ($this->response->successful()) {
+        if ($this->response()->successful()) {
             $closure($this->data());
         }
+
         return $this;
     }
 
-    public function onCollectionSuccess(Closure $closure): ResponseWrapper
+    public function onCollectionSuccess(Closure $closure): ProxyResponse
     {
-        if ($this->response->successful()) {
+        if ($this->response()->successful()) {
             $closure($this->items(), $this->count());
         }
+
         return $this;
     }
 
-    public function onError(Closure $closure): ResponseWrapper
+    public function onError(Closure $closure): ProxyResponse
     {
-        if ($this->response->failed()) {
+        if ($this->response()->failed()) {
             $closure($this->toException());
         }
-        return $this;
-    }
 
-    public function json()
-    {
-        return $this->response->json();
+        return $this;
     }
 
     /**
@@ -97,7 +114,7 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
      */
     public function toException(): ProxyException
     {
-        if ($this->response->failed()) {
+        if ($this->response()->failed()) {
             return new ProxyException($this);
         }
     }
@@ -107,63 +124,55 @@ class ResponseWrapper implements Jsonable, Responsable, ArrayAccess, Arrayable
      *
      * @return $this
      */
-    public function throw(?Closure $closure = null): ResponseWrapper
+    public function throw(?Closure $closure = null): ProxyResponse
     {
-        if ($this->response->failed()) {
+        if ($this->response()->failed()) {
             throw tap($this->toException(), function ($exception) use ($closure) {
                 if (!is_null($closure)) {
                     $closure($this, $exception);
                 }
             });
         }
+
         return $this;
     }
 
     public function toResponse($request)
     {
-        if ($this->response->header('Content-Type') === 'application/json') {
-            return response()->json($this->json(), $this->response->status());
+        if ($this->response()->header('Content-Type') === 'application/json') {
+            return $this->jsonResponse();
         }
-        return response($this->response()->body(), $this->response->status());
-    }
 
-    public function jsonResponse(): JsonResponse
-    {
-        return response($this->response()->json(), $this->response->status())->json();
-    }
-
-    public function toJson($options = 0)
-    {
-        return json_encode($this->json(), JSON_THROW_ON_ERROR);
+        return response($this->response()->body(), $this->status());
     }
 
     public function offsetExists($offset): bool
     {
-        return $this->response->offsetExists($offset);
+        return $this->response()->offsetExists($offset);
     }
 
     public function offsetGet($offset)
     {
-        return $this->response->offsetGet($offset);
+        return $this->response()->offsetGet($offset);
     }
 
     public function offsetSet($offset, $value): void
     {
-        $this->response->offsetSet($offset, $value);
+        $this->response()->offsetSet($offset, $value);
     }
 
     public function offsetUnset($offset): void
     {
-        $this->response->offsetUnset($offset);
+        $this->response()->offsetUnset($offset);
     }
 
     public function collect(): Collection
     {
-        return $this->response->collect();
+        return $this->response()->collect();
     }
 
-    public function toArray()
+    public function response(): HttpResponse
     {
-        return $this->json();
+        return $this->response;
     }
 }
