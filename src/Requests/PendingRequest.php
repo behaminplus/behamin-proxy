@@ -1,17 +1,20 @@
 <?php
 
-
 namespace Behamin\ServiceProxy\Requests;
 
-
-use Behamin\ServiceProxy\Responses\ResponseWrapper;
+use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\PendingRequest as HttpPendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
-class PendingRequest extends \Illuminate\Http\Client\PendingRequest
+class PendingRequest extends HttpPendingRequest
 {
     private string $service = '';
 
@@ -20,7 +23,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         parent::__construct($factory);
     }
 
-    public function request(Request $request, string $service): ResponseWrapper
+    public function request(Request $request, string $service): ProxyResponse
     {
         $this->service = $service;
         $path = $request->path();
@@ -28,11 +31,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
 
         foreach ($request->allFiles() as $name => $file) {
             unset($data[$name]);
-            $this->attach(
-                $name,
-                $request->file($name)->getContent(),
-                $request->file($name)->getClientOriginalName()
-            );
+            $this->attach($name, $request->file($name)->getContent(), $request->file($name)->getClientOriginalName());
         }
 
         switch ($request->method()) {
@@ -57,6 +56,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::get($this->fullUrl($url), $query);
+
         return $this->respond($result);
     }
 
@@ -64,6 +64,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::delete($this->fullUrl($url), $data);
+
         return $this->respond($result);
     }
 
@@ -71,6 +72,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::head($this->fullUrl($url), $query);
+
         return $this->respond($result);
     }
 
@@ -78,6 +80,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::patch($this->fullUrl($url), $data);
+
         return $this->respond($result);
     }
 
@@ -85,6 +88,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::post($this->fullUrl($url), $data);
+
         return $this->respond($result);
     }
 
@@ -92,14 +96,27 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
     {
         $this->prepare();
         $result = parent::put($this->fullUrl($url), $data);
+
         return $this->respond($result);
     }
 
-    public function prepare()
+    public function prepare(): void
     {
-        $this->withHeaders(
-            config('proxy.global_headers', []),
-        );
+        $this->withHeaders(config('proxy.global_headers', []));
+    }
+
+    protected function makePromise(string $method, string $url, array $options = []): PromiseInterface
+    {
+        return $this->promise = $this->sendRequest($method, $url, $options)
+            ->then(function (MessageInterface $message) {
+                return new ProxyResponse(tap(new Response($message), function ($response) {
+                    $this->populateResponse($response);
+                    $this->dispatchResponseReceivedEvent($response);
+                }));
+            })
+            ->otherwise(function (TransferException $e) {
+                return $e instanceof RequestException ? $this->populateResponse(new Response($e->getResponse())) : $e;
+            });
     }
 
     /**
@@ -133,6 +150,7 @@ class PendingRequest extends \Illuminate\Http\Client\PendingRequest
         if ($result instanceof PromiseInterface) {
             return $result;
         }
-        return new ResponseWrapper($result);
+
+        return new ProxyResponse($result);
     }
 }
