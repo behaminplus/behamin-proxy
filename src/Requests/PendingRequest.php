@@ -4,10 +4,14 @@ namespace Behamin\ServiceProxy\Requests;
 
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\PendingRequest as HttpPendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 class PendingRequest extends HttpPendingRequest
@@ -99,6 +103,20 @@ class PendingRequest extends HttpPendingRequest
     public function prepare(): void
     {
         $this->withHeaders(config('proxy.global_headers', []));
+    }
+
+    protected function makePromise(string $method, string $url, array $options = []): PromiseInterface
+    {
+        return $this->promise = $this->sendRequest($method, $url, $options)
+            ->then(function (MessageInterface $message) {
+                return new ProxyResponse(tap(new Response($message), function ($response) {
+                    $this->populateResponse($response);
+                    $this->dispatchResponseReceivedEvent($response);
+                }));
+            })
+            ->otherwise(function (TransferException $e) {
+                return $e instanceof RequestException ? $this->populateResponse(new Response($e->getResponse())) : $e;
+            });
     }
 
     /**
