@@ -10,6 +10,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
@@ -21,12 +22,33 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         $this->response = $response;
     }
 
-    public function data()
+    /**
+     * Get data from response or a subset of it.
+     *
+     * @param  array|string|null  $keys
+     * @return array|mixed
+     */
+    public function data($keys = null)
     {
-        return $this->json()['data'];
+        $data = $this->json()['data'];
+
+        if (is_null($keys)) {
+            return $data;
+        }
+
+        if (is_string($keys)) {
+            return $data[$keys] ?? null;
+        }
+
+        return Arr::only($data, $keys);
     }
 
-    public function message()
+    /**
+     * Get response message.
+     *
+     * @return string|null
+     */
+    public function message(): ?string
     {
         return $this->json()['message'];
     }
@@ -51,6 +73,11 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->response()->json();
     }
 
+    /**
+     * Get response status code.
+     *
+     * @return int
+     */
     public function status(): int
     {
         return $this->response()->status();
