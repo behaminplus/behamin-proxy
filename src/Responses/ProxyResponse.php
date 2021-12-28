@@ -26,9 +26,10 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
      * Get data from response or a subset of it.
      *
      * @param  array|string|null  $keys
+     * @param  mixed  $default
      * @return array|mixed
      */
-    public function data($keys = null)
+    public function data($keys = null, $default = null)
     {
         $data = $this->json()['data'];
 
@@ -37,7 +38,7 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         }
 
         if (is_string($keys)) {
-            return $data[$keys] ?? null;
+            return $data[$keys] ?? $default;
         }
 
         return Arr::only($data, $keys);
