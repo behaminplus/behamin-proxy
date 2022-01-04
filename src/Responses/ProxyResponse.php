@@ -69,6 +69,20 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
         return $this->json()['data']['count'];
     }
 
+    /**
+     * Get response data as a collection.
+     *
+     * @return Collection
+     */
+    public function collect(): Collection
+    {
+        if (isset($this->json()['data']['items'])) {
+            return Collection::make($this->items());
+        }
+
+        return Collection::make($this->data());
+    }
+
     public function json()
     {
         return $this->response()->json();
@@ -192,11 +206,6 @@ class ProxyResponse implements Jsonable, Responsable, ArrayAccess, Arrayable
     public function offsetUnset($offset): void
     {
         $this->response()->offsetUnset($offset);
-    }
-
-    public function collect(): Collection
-    {
-        return $this->response()->collect();
     }
 
     public function response(): HttpResponse
