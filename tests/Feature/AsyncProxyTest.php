@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Http;
 
 class AsyncProxyTest extends TestCase
 {
-    public function test_async_request(): void
+    public function testAsyncRequestsWithPool(): void
     {
         Proxy::fake([
             'test.com/api/path' => Http::response([
