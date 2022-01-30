@@ -32,16 +32,17 @@ class ProxyException extends HttpClientException
     {
         $jsonResponse = $this->proxyResponse->json();
 
-        if (isset($jsonResponse['error']['message'], $jsonResponse['error']['errors'])) {
-            $error = $jsonResponse['error'];
-        } elseif (isset($jsonResponse['message'], $jsonResponse['trace'])) {
-            $error['message'] = $this->getMessage();
-            $error['errors'] = $jsonResponse;
+        if (isset($jsonResponse['error']['message'])) {
+            $errorMessage = $jsonResponse['error']['message'];
+            $errors = $jsonResponse['error']['errors'] ?? null;
+        } elseif (isset($jsonResponse['trace'])) {
+            $errorMessage = $this->getMessage();
+            $errors = $jsonResponse;
         } else {
-            $error['message'] = $jsonResponse['message'] ?? $this->getMessage();
-            $error['errors'] = null;
+            $errorMessage = $jsonResponse['message'] ?? $jsonResponse['error'] ?? $this->getMessage();
+            $errors = null;
         }
 
-        return apiResponse()->errors($error['message'], $error['errors'])->status($this->getCode())->get();
+        return apiResponse()->errors($errorMessage, $errors)->status($this->getCode())->get();
     }
 }
