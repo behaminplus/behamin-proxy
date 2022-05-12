@@ -5,6 +5,7 @@ namespace Behamin\ServiceProxy;
 use Behamin\ServiceProxy\Requests\PendingRequest;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 
 /**
@@ -53,6 +54,8 @@ use Illuminate\Http\Request;
 class Http extends Factory
 {
     protected array $files = [];
+    private string $mockPath;
+    private ?Response $fakeResponse = null;
 
     /**
      * Create a new pending request instance for this factory.
@@ -64,15 +67,36 @@ class Http extends Factory
         return new PendingRequest($this);
     }
 
+    public function mock($jsonPath): Http
+    {
+        $this->mockPath = $jsonPath;
+        return $this;
+    }
+
+    public function getFakeResponse(): ?Response
+    {
+        return $this->fakeResponse;
+    }
+
     /**
      * Execute a method against a new pending request instance.
      *
      * @param  string  $method
      * @param  array  $parameters
      * @return mixed
+     * @throws \JsonException
      */
     public function __call($method, $parameters)
     {
+        if ($this->mockPath && app()->runningUnitTests()) {
+            $mockDirectory = base_path().'\tests\mock\\';
+            $jsonFile = file_get_contents($mockDirectory.$this->mockPath);
+            $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+            \Illuminate\Support\Facades\Http::fake([
+                'test' => $json
+            ]);
+            $this->fakeResponse = \Illuminate\Support\Facades\Http::get('test');
+        }
         if (static::hasMacro($method)) {
             return $this->macroCall($method, $parameters);
         }
