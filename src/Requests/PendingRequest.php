@@ -3,6 +3,7 @@
 namespace Behamin\ServiceProxy\Requests;
 
 use Behamin\ServiceProxy\Http;
+use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Exception\RequestException;
@@ -130,8 +131,8 @@ class PendingRequest extends HttpPendingRequest
 
     private function respond($url, $data, $method)
     {
-        if ($this->factory instanceof Http && $this->factory->getFakeResponse()) {
-            $result = $this->factory->getFakeResponse();
+        if ($this->factory instanceof Http && $this->factory->getMockPath() && app()->runningUnitTests()) {
+            $result = Mock::fakeResponse($this->factory->getMockPath());
         } else {
             $this->prepare();
             $method = Str::lower($method);
