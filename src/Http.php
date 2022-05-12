@@ -54,7 +54,7 @@ use Illuminate\Http\Request;
 class Http extends Factory
 {
     protected array $files = [];
-    private string $mockPath;
+    private ?string $mockPath = null;
     private ?Response $fakeResponse = null;
 
     /**
