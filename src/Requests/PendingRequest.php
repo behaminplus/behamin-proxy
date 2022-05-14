@@ -131,7 +131,7 @@ class PendingRequest extends HttpPendingRequest
 
     private function respond($url, $data, $method)
     {
-        if ($this->factory instanceof Http && $this->factory->getMockPath() && app()->runningUnitTests()) {
+        if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->getMockPath()) {
             $result = Mock::fakeResponse($this->factory->getMockPath());
         } else {
             $this->prepare();
