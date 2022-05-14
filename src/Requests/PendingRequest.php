@@ -2,6 +2,8 @@
 
 namespace Behamin\ServiceProxy\Requests;
 
+use Behamin\ServiceProxy\Http;
+use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Exception\RequestException;
@@ -54,50 +56,32 @@ class PendingRequest extends HttpPendingRequest
 
     public function get(string $url = null, $query = null)
     {
-        $this->prepare();
-        $result = parent::get($this->fullUrl($url), $query);
-
-        return $this->respond($result);
+        return $this->respond($url, $query, Request::METHOD_GET);
     }
 
     public function delete($url = null, $data = [])
     {
-        $this->prepare();
-        $result = parent::delete($this->fullUrl($url), $data);
-
-        return $this->respond($result);
+        return $this->respond($url, $data, Request::METHOD_DELETE);
     }
 
     public function head(string $url = null, $query = null)
     {
-        $this->prepare();
-        $result = parent::head($this->fullUrl($url), $query);
-
-        return $this->respond($result);
+        return $this->respond($url, $query, Request::METHOD_HEAD);
     }
 
     public function patch($url, $data = [])
     {
-        $this->prepare();
-        $result = parent::patch($this->fullUrl($url), $data);
-
-        return $this->respond($result);
+        return $this->respond($url, $data, Request::METHOD_PATCH);
     }
 
     public function post(string $url, array $data = [])
     {
-        $this->prepare();
-        $result = parent::post($this->fullUrl($url), $data);
-
-        return $this->respond($result);
+        return $this->respond($url, $data, Request::METHOD_POST);
     }
 
     public function put($url, $data = [])
     {
-        $this->prepare();
-        $result = parent::put($this->fullUrl($url), $data);
-
-        return $this->respond($result);
+        return $this->respond($url, $data, Request::METHOD_PUT);
     }
 
     public function prepare(): void
@@ -120,10 +104,10 @@ class PendingRequest extends HttpPendingRequest
     }
 
     /**
-     * @param  null  $path
+     * @param  null|string  $path
      * @return string
      */
-    private function fullUrl($path): string
+    private function fullUrl(?string $path): string
     {
         $baseUrl = UrlGenerator::baseUrl();
         $servicePath = $this->service;
@@ -145,8 +129,16 @@ class PendingRequest extends HttpPendingRequest
         return $baseUrl.($servicePath === '' ? $servicePath : '/'.$servicePath).'/'.$finalPath;
     }
 
-    private function respond($result)
+    private function respond($url, $data, $method)
     {
+        if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->getMockPath()) {
+            $result = Mock::fakeResponse($this->factory->getMockPath());
+        } else {
+            $this->prepare();
+            $method = Str::lower($method);
+            $result = parent::$method($this->fullUrl($url), $data);
+        }
+
         if ($result instanceof PromiseInterface) {
             return $result;
         }

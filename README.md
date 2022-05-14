@@ -200,3 +200,12 @@ assertNotSent(callable $callback) | void
 assertNothingSent() | void 
 assertSentCount(int $count) | void 
 assertSequencesAreEmpty() | void
+
+### Mocking proxy response
+You can use `mock()` on Proxy class before calling http methods and pass the json path in your 'tests/mock' directory, to mock a json for faking your Proxy response in test mode.
+Example:
+
+```php
+use Behamin\ServiceProxy\Proxy;
+Proxy::mock('response.json')->get('address');
+```
