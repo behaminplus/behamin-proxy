@@ -3,8 +3,10 @@
 namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Requests\PendingRequest;
+use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 
 /**
@@ -53,6 +55,7 @@ use Illuminate\Http\Request;
 class Http extends Factory
 {
     protected array $files = [];
+    private ?string $mockPath = null;
 
     /**
      * Create a new pending request instance for this factory.
@@ -64,12 +67,27 @@ class Http extends Factory
         return new PendingRequest($this);
     }
 
+    public function mock($jsonPath): Http
+    {
+        $this->mockPath = $jsonPath;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMockPath(): ?string
+    {
+        return $this->mockPath;
+    }
+
     /**
      * Execute a method against a new pending request instance.
      *
      * @param  string  $method
      * @param  array  $parameters
      * @return mixed
+     * @throws \JsonException
      */
     public function __call($method, $parameters)
     {

@@ -3,6 +3,7 @@
 namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Responses\ProxyResponse;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\ResponseSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Facade;
@@ -11,9 +12,10 @@ use Illuminate\Support\Facades\Facade;
  * Class Proxy
  * @package Proxy
  *
- * @method static \Illuminate\Http\Client\Factory fake($callback = null)
+ * @method static Factory fake($callback = null)
  * @method static Http accept(string $contentType)
  * @method static Http acceptJson()
+ * @method static Http mock(string $jsonPath)
  * @method static Http asForm()
  * @method static Http asJson()
  * @method static Http asMultipart()

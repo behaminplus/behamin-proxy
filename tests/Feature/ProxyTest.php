@@ -8,6 +8,7 @@ use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+
 use function PHPUnit\Framework\assertEquals;
 
 class ProxyTest extends TestCase
