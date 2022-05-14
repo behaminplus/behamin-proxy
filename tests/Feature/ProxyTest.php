@@ -8,6 +8,7 @@ use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+
 use function PHPUnit\Framework\assertEquals;
 
 class ProxyTest extends TestCase
@@ -84,5 +85,13 @@ class ProxyTest extends TestCase
 
         $this->assertEquals(['foo' => 'bar'], $response->data());
         $this->assertEquals('bar', $response->data('foo'));
+    }
+
+    public function testMockIsWorking()
+    {
+        $response = Proxy::mock('..\..\..\..\..\..\tests\mock\test.json')->get('test');
+        $jsonFile = file_get_contents(__DIR__.'\..\mock\test.json');
+        $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertEquals($response->json(), $json);
     }
 }
