@@ -74,7 +74,7 @@ class PendingRequest extends HttpPendingRequest
         return $this->respond($url, $data, Request::METHOD_PATCH);
     }
 
-    public function post(string $url, array $data = [])
+    public function post(string $url, $data = [])
     {
         return $this->respond($url, $data, Request::METHOD_POST);
     }
