@@ -45,6 +45,20 @@ class ProxyTest extends TestCase
             });
     }
 
+    public function testSuccessfulDomainChange(): void
+    {
+        $domain = 'http://sub.domain.example';
+        Proxy::fake([
+            $domain.'/test-service/api/path/1' => Http::response(['foo' => 'bar']),
+        ]);
+
+        Proxy::domain($domain)->get('test-service/api/path/1')
+            ->onSuccess(function (ProxyResponse $responseWrapper) {
+                assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
+                assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
+            })->throw();
+    }
+
     public function testSuccessfulManualRequest(): void
     {
         Proxy::fake([
