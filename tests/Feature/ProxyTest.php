@@ -53,9 +53,9 @@ class ProxyTest extends TestCase
         ]);
 
         Proxy::domain($domain)->get('test-service/api/path/1')
-            ->onSuccess(function (ProxyResponse $responseWrapper) {
-                assertEquals(['foo' => 'bar'], $responseWrapper->response()->json());
-                assertEquals('/test-service/api/path/1', $responseWrapper->response()->effectiveUri()->getPath());
+            ->onSuccess(function (ProxyResponse $responseWrapper) use ($domain) {
+                $effectiveUri = $responseWrapper->response()->effectiveUri();
+                assertEquals($domain,$effectiveUri->getScheme() . '://'. $effectiveUri->getHost() );
             })->throw();
     }
 
