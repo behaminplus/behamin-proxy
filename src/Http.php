@@ -39,6 +39,7 @@ use Illuminate\Http\Request;
  * @method PendingRequest withOptions(array $options)
  * @method PendingRequest withToken(string $token, string $type = 'Bearer')
  * @method PendingRequest withUserAgent(string $userAgent)
+ * @method PendingRequest domain(string $domain)
  * @method PendingRequest withoutRedirecting()
  * @method PendingRequest withoutVerifying()
  * @method ProxyResponse delete(string $url = null, array $data = [])
