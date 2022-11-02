@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Http withToken(string $token, string $type = 'Bearer')
  * @method static Http withUserAgent(string $userAgent)
  * @method static Http withoutRedirecting()
+ * @method static Http domain(string $domain)
  * @method static Http withoutVerifying()
  * @method static array pool(callable $callback)
  * @method static ProxyResponse request(Request $request, string $service)

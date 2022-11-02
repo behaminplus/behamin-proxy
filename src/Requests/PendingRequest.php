@@ -20,9 +20,18 @@ class PendingRequest extends HttpPendingRequest
 {
     private string $service = '';
 
+    private ?string $domain = null;
+
     public function __construct($factory = null)
     {
         parent::__construct($factory);
+    }
+
+    public function domain(string $domain): PendingRequest
+    {
+        $this->domain = $domain;
+
+        return $this;
     }
 
     public function request(Request $request, string $service): ProxyResponse
@@ -74,7 +83,7 @@ class PendingRequest extends HttpPendingRequest
         return $this->respond($url, $data, Request::METHOD_PATCH);
     }
 
-    public function post(string $url, array $data = [])
+    public function post(string $url, $data = [])
     {
         return $this->respond($url, $data, Request::METHOD_POST);
     }
@@ -109,7 +118,8 @@ class PendingRequest extends HttpPendingRequest
      */
     private function fullUrl(?string $path): string
     {
-        $baseUrl = UrlGenerator::baseUrl();
+        $baseUrl = UrlGenerator::baseUrl($this->domain);
+
         $servicePath = $this->service;
 
         if (Str::endsWith($baseUrl, '/')) {
