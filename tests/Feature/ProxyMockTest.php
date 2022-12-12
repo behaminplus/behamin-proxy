@@ -32,7 +32,7 @@ class ProxyMockTest extends TestCase
         $response = Proxy::mock($this->jsonPathBackStepUpFromLaravel)->get('test');
         $jsonFile = file_get_contents($this->jsonPath);
         $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
-        $this->assertEquals($response->json(), $json);
+        $this->assertEquals($json, $response->json());
     }
 
     public function testMultiMocksAreWorking(): void
@@ -42,9 +42,27 @@ class ProxyMockTest extends TestCase
         $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
         $this->assertEquals($response->json(), $json);
 
-        $response = Proxy::mock($this->jsonPathBackStepUp2FromLaravel)->get('test2');
+        $response = Proxy::mock($this->jsonPathBackStepUp2FromLaravel)->get('/test2');
         $jsonFile = file_get_contents($this->jsonPath2);
         $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
-        $this->assertEquals($response->json(), $json);
+        $this->assertEquals($json, $response->json());
+    }
+
+    public function testMultiMocksOverride(): void
+    {
+        Proxy::mock(['/test2' => $this->jsonPathBackStepUpFromLaravel]);
+        $response = Proxy::clearExistingFakes()->mock($this->jsonPathBackStepUp2FromLaravel)->get('/test2');
+        $jsonFile = file_get_contents($this->jsonPath2);
+        $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertEquals($json, $response->json());
+    }
+
+    public function testMultiMocks(): void
+    {
+        Proxy::mock(['/test2' => $this->jsonPathBackStepUpFromLaravel]);
+        $response = Proxy::get('/test2');
+        $jsonFile = file_get_contents($this->jsonPath);
+        $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertEquals($json, $response->json());
     }
 }
