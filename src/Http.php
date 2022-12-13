@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http as HttpFactory;
 use Illuminate\Support\Str;
+use ReflectionObject;
 
 /**
  * Class Http
@@ -88,10 +89,11 @@ class Http extends Factory
 
     public function clearExistingFakes(): self
     {
-        $reflection = new \ReflectionObject(HttpFactory::getFacadeRoot());
+        $reflection = new ReflectionObject(HttpFactory::getFacadeRoot());
         $property = $reflection->getProperty('stubCallbacks');
         $property->setAccessible(true);
         $property->setValue(HttpFactory::getFacadeRoot(), collect());
+
         return $this;
     }
 
@@ -104,6 +106,7 @@ class Http extends Factory
     {
         $url = key($fakeArray);
         $jsonPath = $fakeArray[$url];
+
         return [$this->trimUrl($url) => $this->getJsonContent($jsonPath)];
     }
 
