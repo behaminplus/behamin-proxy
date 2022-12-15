@@ -135,6 +135,11 @@ class Http extends Factory
         return $this->mockPath;
     }
 
+    public function isSetMocking(): bool
+    {
+        return !empty($this->mockPath);
+    }
+
     /**
      * Execute a method against a new pending request instance.
      *
@@ -149,22 +154,8 @@ class Http extends Factory
             return $this->macroCall($method, $parameters);
         }
 
-        if ($this->isSetMocking() && $this->isHttpRequestMethod($method)) {
-            $this->mock([Arr::first($parameters) => $this->mockPath]);
-        }
-
         return tap($this->newPendingRequest(), function ($request) {
             $request->stub($this->stubCallbacks);
         })->{$method}(...$parameters);
-    }
-
-    private function isSetMocking(): bool
-    {
-        return !empty($this->mockPath);
-    }
-
-    private function isHttpRequestMethod($method): bool
-    {
-        return in_array(Str::lower($method), ['post', 'get', 'head', 'delete', 'put', 'patch']);
     }
 }

@@ -142,6 +142,10 @@ class PendingRequest extends HttpPendingRequest
 
     private function respond($url, $data, $method)
     {
+        if ($this->factory->isSetMocking() && $this->isHttpRequestMethod($method)) {
+            $this->factory->mock([$url => $this->factory->getMockPath()]);
+        }
+
         if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->hasFake($url)) {
             /** Http will remove / from start url */
             $result = HttpFactory::$method($url);
@@ -156,5 +160,10 @@ class PendingRequest extends HttpPendingRequest
         }
 
         return new ProxyResponse($result);
+    }
+
+    private function isHttpRequestMethod($method): bool
+    {
+        return in_array(Str::lower($method), ['post', 'get', 'head', 'delete', 'put', 'patch']);
     }
 }

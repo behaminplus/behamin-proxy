@@ -36,6 +36,17 @@ class ProxyMockTest extends TestCase
         $this->assertEquals($json, $response->json());
     }
 
+    public function testMockWithHeaders(): void
+    {
+        $response = Proxy::mock($this->jsonPathBackStepUpFromLaravel)
+            ->withHeaders(['tokens' => 'any'])
+            ->get('test');
+        $jsonFile = file_get_contents($this->jsonPath);
+        $json = json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertEquals($json, $response->json());
+    }
+
     public function testMultiMocksAreWorking(): void
     {
         $response = Proxy::mock($this->jsonPathBackStepUpFromLaravel)->get('test');
