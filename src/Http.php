@@ -6,8 +6,11 @@ use Behamin\ServiceProxy\Requests\PendingRequest;
 use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\Factory;
-use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Http as HttpFactory;
+use Illuminate\Support\Str;
+use ReflectionObject;
 
 /**
  * Class Http
@@ -57,6 +60,7 @@ class Http extends Factory
 {
     protected array $files = [];
     private ?string $mockPath = null;
+    private array $fakes = [];
 
     /**
      * Create a new pending request instance for this factory.
@@ -70,8 +74,57 @@ class Http extends Factory
 
     public function mock($jsonPath): Http
     {
-        $this->mockPath = $jsonPath;
+        if (!is_array($jsonPath)) {
+            $this->mockPath = $jsonPath;
+            return $this;
+        }
+
+        $fakeItem = $this->prepareFakeItem($jsonPath);
+        $this->fakes[key($fakeItem)] = Arr::first($fakeItem);
+        HttpFactory::fake($fakeItem);
+        $this->mockPath = null;
+
         return $this;
+    }
+
+    public function clearExistingFakes(): self
+    {
+        $reflection = new ReflectionObject(HttpFactory::getFacadeRoot());
+        $property = $reflection->getProperty('stubCallbacks');
+        $property->setAccessible(true);
+        $property->setValue(HttpFactory::getFacadeRoot(), collect());
+
+        return $this;
+    }
+
+    public function trimUrl($url): string
+    {
+        return trim($url, '/');
+    }
+
+    private function prepareFakeItem($fakeArray)
+    {
+        $url = key($fakeArray);
+        $jsonPath = $fakeArray[$url];
+
+        return [$this->trimUrl($url) => $this->getJsonContent($jsonPath)];
+    }
+
+    private function getJsonContent($jsonPath)
+    {
+        $mockDirectory = base_path().DIRECTORY_SEPARATOR.'tests'.DIRECTORY_SEPARATOR.'mock'.DIRECTORY_SEPARATOR;
+        $jsonFile = file_get_contents($mockDirectory.$jsonPath);
+        return json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    public function hasFakes()
+    {
+        return !empty($this->fakes);
+    }
+
+    public function hasFake($url)
+    {
+        return !empty($this->fakes[$this->trimUrl($url)]);
     }
 
     /**
@@ -96,8 +149,23 @@ class Http extends Factory
             return $this->macroCall($method, $parameters);
         }
 
+        if ($this->isSetMocking() && $this->isHttpRequestMethod($method)) {
+            $this->mock([Arr::first($parameters) => $this->mockPath]);
+        }
+
         return tap($this->newPendingRequest(), function ($request) {
             $request->stub($this->stubCallbacks);
         })->{$method}(...$parameters);
     }
+
+    private function isSetMocking(): bool
+    {
+        return !empty($this->mockPath);
+    }
+
+    private function isHttpRequestMethod($method): bool
+    {
+        return in_array(Str::lower($method), ['post', 'get', 'head', 'delete', 'put', 'patch']);
+    }
+
 }
