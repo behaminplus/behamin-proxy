@@ -12,6 +12,7 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\PendingRequest as HttpPendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http as HttpFactory;
 use Illuminate\Support\Str;
 use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
@@ -141,8 +142,13 @@ class PendingRequest extends HttpPendingRequest
 
     private function respond($url, $data, $method)
     {
-        if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->getMockPath()) {
-            $result = Mock::fakeResponse($this->factory->getMockPath());
+        if ($this->factory->isSetMocking() && $this->isHttpRequestMethod($method)) {
+            $this->factory->mock([$url => $this->factory->getMockPath()]);
+        }
+
+        if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->hasFake($url)) {
+            /** Http will remove / from start url */
+            $result = HttpFactory::$method($url);
         } else {
             $this->prepare();
             $method = Str::lower($method);
@@ -154,5 +160,10 @@ class PendingRequest extends HttpPendingRequest
         }
 
         return new ProxyResponse($result);
+    }
+
+    private function isHttpRequestMethod($method): bool
+    {
+        return in_array(Str::lower($method), ['post', 'get', 'head', 'delete', 'put', 'patch']);
     }
 }
