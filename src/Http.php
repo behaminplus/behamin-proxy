@@ -167,5 +167,4 @@ class Http extends Factory
     {
         return in_array(Str::lower($method), ['post', 'get', 'head', 'delete', 'put', 'patch']);
     }
-
 }
