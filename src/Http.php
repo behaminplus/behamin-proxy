@@ -72,6 +72,9 @@ class Http extends Factory
         return new PendingRequest($this);
     }
 
+    /**
+     * @throws \JsonException
+     */
     public function mock($jsonPath): Http
     {
         if (!is_array($jsonPath)) {
@@ -79,9 +82,12 @@ class Http extends Factory
             return $this;
         }
 
-        $fakeItem = $this->prepareFakeItem($jsonPath);
-        $this->fakes[key($fakeItem)] = Arr::first($fakeItem);
-        HttpFactory::fake($fakeItem);
+        foreach ($jsonPath as $url => $path) {
+            $fakeItem = [$this->trimUrl($url) => $this->getJsonContent($path)];
+            $this->fakes[key($fakeItem)] = Arr::first($fakeItem);
+            HttpFactory::fake($fakeItem);
+        }
+
         $this->mockPath = null;
 
         return $this;
@@ -100,14 +106,6 @@ class Http extends Factory
     public function trimUrl($url): string
     {
         return trim($url, '/');
-    }
-
-    private function prepareFakeItem($fakeArray)
-    {
-        $url = key($fakeArray);
-        $jsonPath = $fakeArray[$url];
-
-        return [$this->trimUrl($url) => $this->getJsonContent($jsonPath)];
     }
 
     private function getJsonContent($jsonPath)
