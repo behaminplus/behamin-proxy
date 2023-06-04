@@ -3,7 +3,6 @@
 namespace Behamin\ServiceProxy\Requests;
 
 use Behamin\ServiceProxy\Http;
-use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Behamin\ServiceProxy\UrlGenerator;
 use GuzzleHttp\Exception\RequestException;
@@ -15,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
+use Illuminate\Support\Facades\Http as HttpFactory;
 
 class PendingRequest extends HttpPendingRequest
 {
