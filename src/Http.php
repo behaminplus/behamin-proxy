@@ -3,11 +3,12 @@
 namespace Behamin\ServiceProxy;
 
 use Behamin\ServiceProxy\Requests\PendingRequest;
-use Behamin\ServiceProxy\Responses\Mock;
 use Behamin\ServiceProxy\Responses\ProxyResponse;
 use Illuminate\Http\Client\Factory;
-use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Http as HttpFactory;
+use ReflectionObject;
 
 /**
  * Class Http
