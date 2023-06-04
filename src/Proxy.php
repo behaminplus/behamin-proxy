@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Factory fake($callback = null)
  * @method static Http accept(string $contentType)
  * @method static Http acceptJson()
- * @method static Http mock(string $jsonPath)
+ * @method static Http mock(string|array $jsonPath)
  * @method static Http asForm()
  * @method static Http asJson()
  * @method static Http asMultipart()
