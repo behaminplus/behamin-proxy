@@ -68,10 +68,57 @@ class Http extends Factory
         return new PendingRequest($this);
     }
 
+    /**
+     * @throws \JsonException
+     */
     public function mock($jsonPath): Http
     {
-        $this->mockPath = $jsonPath;
+        if (!is_array($jsonPath)) {
+            $this->mockPath = $jsonPath;
+            return $this;
+        }
+
+        foreach ($jsonPath as $url => $path) {
+            $fakeItem = [$this->trimUrl($url) => $this->getJsonContent($path)];
+            $this->fakes[key($fakeItem)] = Arr::first($fakeItem);
+            HttpFactory::fake($fakeItem);
+        }
+
+        $this->mockPath = null;
+
         return $this;
+    }
+
+    public function clearExistingFakes(): self
+    {
+        $reflection = new ReflectionObject(HttpFactory::getFacadeRoot());
+        $property = $reflection->getProperty('stubCallbacks');
+        $property->setAccessible(true);
+        $property->setValue(HttpFactory::getFacadeRoot(), collect());
+
+        return $this;
+    }
+
+    public function trimUrl($url): string
+    {
+        return trim($url, '/');
+    }
+
+    private function getJsonContent($jsonPath)
+    {
+        $mockDirectory = base_path().DIRECTORY_SEPARATOR.'tests'.DIRECTORY_SEPARATOR.'mock'.DIRECTORY_SEPARATOR;
+        $jsonFile = file_get_contents($mockDirectory.$jsonPath);
+        return json_decode($jsonFile, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    public function hasFakes()
+    {
+        return !empty($this->fakes);
+    }
+
+    public function hasFake($url)
+    {
+        return !empty($this->fakes[$this->trimUrl($url)]);
     }
 
     /**
@@ -80,6 +127,11 @@ class Http extends Factory
     public function getMockPath(): ?string
     {
         return $this->mockPath;
+    }
+
+    public function isSetMocking(): bool
+    {
+        return !empty($this->mockPath);
     }
 
     /**
