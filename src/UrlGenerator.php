@@ -21,8 +21,9 @@ class UrlGenerator
     private static function getConfigBaseUrl(): string
     {
         $url = config('proxy.base_url');
+        $isLocalUrl = config('proxy.is_local_url');
 
-        if (empty($url) || !is_string($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        if (!$isLocalUrl && (empty($url) || !is_string($url) || !filter_var($url, FILTER_VALIDATE_URL))) {
             throw new InvalidArgumentException("Invalid or empty base_url in config file.");
         }
 
