@@ -12,6 +12,7 @@ use Illuminate\Http\Client\PendingRequest as HttpPendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Psr\Http\Message\MessageInterface;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 use Illuminate\Support\Facades\Http as HttpFactory;
@@ -118,7 +119,7 @@ class PendingRequest extends HttpPendingRequest
      */
     private function fullUrl(?string $path): string
     {
-        $baseUrl = UrlGenerator::baseUrl($this->domain);
+        $baseUrl = UrlGenerator::baseUrl();
 
         $servicePath = $this->service;
 
@@ -141,24 +142,27 @@ class PendingRequest extends HttpPendingRequest
 
     private function respond($url, $data, $method)
     {
-        if ($this->factory->isSetMocking() && $this->isHttpRequestMethod($method)) {
-            $this->factory->mock([$url => $this->factory->getMockPath()]);
-        }
+        try {
+            if ($this->factory->isSetMocking() && $this->isHttpRequestMethod($method)) {
+                $this->factory->mock([$url => $this->factory->getMockPath()]);
+            }
 
-        if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->hasFake($url)) {
-            /** Http will remove / from start url */
-            $result = HttpFactory::$method($url);
-        } else {
-            $this->prepare();
-            $method = Str::lower($method);
-            $result = parent::$method($this->fullUrl($url), $data);
-        }
+            if (app()->runningUnitTests() && $this->factory instanceof Http && $this->factory->hasFake($url)) {
+                /** Http will remove / from start url */
+                $result = HttpFactory::$method($url);
+            } else {
+                $this->prepare();
+                $method = Str::lower($method);
+                $result = parent::$method($this->fullUrl($url), $data);
+            }
 
-        if ($result instanceof PromiseInterface) {
-            return $result;
+            if ($result instanceof PromiseInterface) {
+                return $result;
+            }
+            return new ProxyResponse($result);
+        } catch (\Exception $exception) {
+            throw new InvalidArgumentException($exception->getMessage());
         }
-
-        return new ProxyResponse($result);
     }
 
     private function isHttpRequestMethod($method): bool
