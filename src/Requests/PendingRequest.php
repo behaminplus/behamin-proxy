@@ -119,7 +119,7 @@ class PendingRequest extends HttpPendingRequest
      */
     private function fullUrl(?string $path): string
     {
-        $baseUrl = UrlGenerator::baseUrl();
+        $baseUrl = UrlGenerator::baseUrl($this->domain);
 
         $servicePath = $this->service;
 
