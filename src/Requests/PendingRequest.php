@@ -114,15 +114,23 @@ class PendingRequest extends HttpPendingRequest
     }
 
     /**
+     * @param $url
+     * @return bool
+     */
+    private function isValidUrl($url): bool
+    {
+        $pattern = '/^.+?\..+$/';
+        return preg_match($pattern, $url) != false;
+    }
+
+    /**
      * @param  null|string  $path
      * @return string
      */
     private function fullUrl(?string $path): string
     {
         $baseUrl = UrlGenerator::baseUrl($this->domain);
-
         $servicePath = $this->service;
-
         if (Str::endsWith($baseUrl, '/')) {
             $baseUrl = Str::substr($baseUrl, 0, -1);
         }
@@ -131,13 +139,11 @@ class PendingRequest extends HttpPendingRequest
             $servicePath = Str::substr($baseUrl, 1);
         }
 
-        if (Str::startsWith($path, '/')) {
-            $finalPath = Str::substr($path, 1);
-        } else {
-            $finalPath = $path;
-        }
+        $finalPath = Str::startsWith($path, '/') ? Str::substr($path, 1) : $path;
 
-        return $baseUrl.($servicePath === '' ? $servicePath : '/'.$servicePath).'/'.$finalPath;
+        $prefix = $baseUrl . ($servicePath === '' ? $servicePath : '/' . $servicePath);
+
+        return $this->isValidUrl($path) ? $finalPath : $prefix . '/' . $finalPath;
     }
 
     private function respond($url, $data, $method)
